@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: reloop_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - reloop_network
+
+  redis:
+    image: redis:alpine
+    container_name: reloop_cache
+    ports:
+      - "6379:6379"
+    networks:
+      - reloop_network
+
+networks:
+  reloop_network:
+    driver: bridge
+
+volumes:
+  mongo_data:

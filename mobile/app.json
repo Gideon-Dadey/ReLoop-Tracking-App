@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "ReLoop",
+    "slug": "reloop",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/reloop.png",
+    "scheme": "ReLoop",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/reloop.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/reloop.png",
+        "backgroundImage": "./assets/reloop.png",
+        "monochromeImage": "./assets/reloop.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/reloop.png"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
