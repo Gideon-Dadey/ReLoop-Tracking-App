@@ -21,6 +21,9 @@ interface User {
   role: 'user' | 'vendor' | 'admin';
   organizationId: any;
   points: number;
+  streakCount: number;
+  lastReturnAt?: string;
+  weeklyGoal?: { current: number; target: number; percent: number };
   impact: { plasticSaved: number; co2Saved: number };
   avatar?: string;
   createdAt?: string;

@@ -152,4 +152,13 @@ export const apiService = {
       throw new Error(error.response?.data?.message || 'Failed to fetch leaderboard');
     }
   },
+  
+  verifyClean: async (serialNumber: string, image: string) => {
+    try {
+      const { data } = await apiClient.post('/containers/verify', { serialNumber, image });
+      return data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Verification failed');
+    }
+  },
 };

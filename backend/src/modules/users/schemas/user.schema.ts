@@ -27,6 +27,12 @@ export class User extends Document {
   @Prop({ default: 0 })
   points: number;
 
+  @Prop({ default: 0 })
+  streakCount: number;
+
+  @Prop({ type: Date, default: null })
+  lastReturnAt: Date;
+
   @Prop({ type: Object, default: { plasticSaved: 0, co2Saved: 0 } })
   impact: {
     plasticSaved: number;

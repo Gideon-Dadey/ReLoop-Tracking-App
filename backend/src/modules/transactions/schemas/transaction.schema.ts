@@ -29,6 +29,9 @@ export class Transaction extends Document {
   @Prop({ required: true })
   co2Saved: number;
 
+  @Prop({ default: 0 })
+  streakBonus: number;
+
   @Prop()
   signature: string; // Placeholder for blockchain hash
 

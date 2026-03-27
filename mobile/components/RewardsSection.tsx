@@ -6,7 +6,7 @@ import { useThemeColors } from '../src/store/useThemeStore';
 import { apiService } from '../src/api/service';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-const RADIUS = 12;
+const RADIUS = 10;
 
 export default function RewardsSection() {
   const { user, accessToken } = useAuthStore();
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
 
   // Modal Styles
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 },
-  modalContent: { padding: 24, borderRadius: 24 },
+  modalContent: { padding: 24, borderRadius: 10 },
   closeBtn: { alignSelf: 'flex-end', width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   confirmView: { alignItems: 'center' },
   modalIconHuge: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },

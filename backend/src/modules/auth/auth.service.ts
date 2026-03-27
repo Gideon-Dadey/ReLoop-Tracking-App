@@ -5,12 +5,14 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { User, UserRole } from '../users/schemas/user.schema';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
+import { ContainersService } from '../containers/containers.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private jwtService: JwtService,
+    private containersService: ContainersService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -58,6 +60,8 @@ export class AuthService {
     user.refreshToken = refreshToken;
     await user.save();
 
+    const weeklyGoal = await this.containersService.getWeeklyGoal(user._id.toString());
+
     return {
       accessToken,
       refreshToken,
@@ -69,9 +73,34 @@ export class AuthService {
         organizationId: user.organizationId,
         impact: user.impact,
         points: user.points,
+        streakCount: user.streakCount,
+        lastReturnAt: user.lastReturnAt,
+        weeklyGoal,
         avatar: user.avatar,
         createdAt: user.createdAt,
       },
+    };
+  }
+
+  async getProfile(userId: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new UnauthorizedException('User not found');
+
+    const weeklyGoal = await this.containersService.getWeeklyGoal(user._id.toString());
+
+    return {
+      id: user._id,
+      email: user.email,
+      userName: user.userName,
+      role: user.role,
+      organizationId: user.organizationId,
+      impact: user.impact,
+      points: user.points,
+      streakCount: user.streakCount,
+      lastReturnAt: user.lastReturnAt,
+      weeklyGoal,
+      avatar: user.avatar,
+      createdAt: user.createdAt,
     };
   }
 

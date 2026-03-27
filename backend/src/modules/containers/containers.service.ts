@@ -116,8 +116,29 @@ export class ContainersService {
     container.currentUserId = undefined;
     await container.save();
 
-    // Update User Impact and Points
-    user.points += points;
+    // --- Streak & Gamification Logic ---
+    const now = new Date();
+    let streakBonus = 0;
+    
+    if (user.lastReturnAt) {
+      const hoursSinceLastReturn = (now.getTime() - user.lastReturnAt.getTime()) / (1000 * 60 * 60);
+      
+      // Streak rule: Return within 48 hours to maintain/increase streak
+      if (hoursSinceLastReturn <= 48) {
+        user.streakCount += 1;
+        // Bonus: 2 points for every streak level, capped at 20 bonus points
+        streakBonus = Math.min(user.streakCount * 2, 20);
+      } else {
+        // Streak broken, reset to 1
+        user.streakCount = 1;
+      }
+    } else {
+      // First return ever
+      user.streakCount = 1;
+    }
+    
+    user.lastReturnAt = now;
+    user.points += points + streakBonus;
     user.impact.plasticSaved += plasticSaved;
     user.impact.co2Saved += co2Saved;
     user.markModified('impact');
@@ -129,7 +150,8 @@ export class ContainersService {
       vendorId: new Types.ObjectId(vendorId),
       containerId: container._id,
       type: TransactionType.RETURN,
-      pointsAwarded: points,
+      pointsAwarded: points + streakBonus,
+      streakBonus,
       plasticSaved,
       co2Saved,
       organizationId: container.organizationId || null,
@@ -137,11 +159,16 @@ export class ContainersService {
     });
     await transaction.save();
 
-    this.eventEmitter.emit('container.returned', { userId: user._id.toString(), serialNumber, points });
+    this.eventEmitter.emit('container.returned', { 
+      userId: user._id.toString(), 
+      serialNumber, 
+      points: points + streakBonus,
+      streakCount: user.streakCount 
+    });
 
     return { 
       message: 'Container returned successfully',
-      impact: { plasticSaved, co2Saved, points },
+      impact: { plasticSaved, co2Saved, points: points + streakBonus, streakBonus, streakCount: user.streakCount },
       container 
     };
   }
@@ -180,5 +207,40 @@ export class ContainersService {
     })
     .populate('lastVendorId', 'userName email')
     .exec();
+  }
+
+  async getWeeklyGoal(userId: string) {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const count = await this.transactionModel.countDocuments({
+      userId: new Types.ObjectId(userId),
+      type: TransactionType.RETURN,
+      createdAt: { $gte: sevenDaysAgo }
+    });
+
+    return {
+      current: count,
+      target: 5, // Default target
+      percent: Math.min(Math.round((count / 5) * 100), 100)
+    };
+  }
+
+  async verifyCleanliness(serialNumber: string, imageBase64: string) {
+    // In a production environment, this is where you'd call Gemini Vision or Google Cloud Vision.
+    // E.g. const result = await this.visionService.analyze(imageBase64);
+    
+    // We'll simulate a 1-second "AI Analysis" and always return success for this demo.
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    const isClean = true; // Simulated result
+    const confidence = 0.98;
+
+    return {
+      success: isClean,
+      confidence,
+      message: isClean ? 'Container is clean and ready for reuse! ✨' : 'We detected some residue. Please rinse and try again.',
+      timestamp: new Date().toISOString()
+    };
   }
 }

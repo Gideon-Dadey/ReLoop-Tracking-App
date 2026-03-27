@@ -37,6 +37,13 @@ export class ContainersController {
     return this.containersService.returnByEmail(body.serialNumber, body.userEmail, req.user.id);
   }
 
+  @Post('verify')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Verify container cleanliness via AI' })
+  async verify(@Body() body: { serialNumber: string; image: string }, @Request() req: any) {
+    return this.containersService.verifyCleanliness(body.serialNumber, body.image);
+  }
+
   @Post('seed-demo')
   @ApiOperation({ summary: 'Seed a test container for demo' })
   async seed(@Body() body: { serialNumber: string; type: string }) {

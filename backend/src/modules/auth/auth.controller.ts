@@ -31,7 +31,7 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
   async getProfile(@Req() req) {
-    return req.user;
+    return this.authService.getProfile(req.user.id);
   }
 
   @Patch('profile')

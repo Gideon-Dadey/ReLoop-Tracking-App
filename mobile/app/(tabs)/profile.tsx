@@ -520,7 +520,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 18,
-    borderRadius: 20,
+    borderRadius: 10,
     gap: 10,
     marginTop: 40,
     borderWidth: 1,
@@ -539,7 +539,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    borderRadius: 24,
+    borderRadius: 10,
     padding: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
@@ -560,7 +560,7 @@ const styles = StyleSheet.create({
   inputGroup: { gap: 16 },
   modalInput: {
     padding: 16,
-    borderRadius: 14,
+    borderRadius: 10,
     fontSize: 16,
     fontWeight: '600',
   },
