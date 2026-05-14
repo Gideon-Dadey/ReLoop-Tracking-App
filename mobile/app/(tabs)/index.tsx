@@ -14,7 +14,8 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Leaf, Wind, Star, ArrowUpRight, ArrowDownLeft,
   MapPin, ChevronRight, Bell, Globe, ArrowRight,
-  HelpCircle, PlusCircle, Recycle,
+  HelpCircle, PlusCircle, Recycle, BarChart3, Trophy,
+  Droplets, Car, TreePine,
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useNotificationStore } from '@/src/store/useNotificationStore';
@@ -116,6 +117,35 @@ export default function Dashboard() {
   const goToCommunity = useCallback(() => router.push('/community'), [router]);
   const goToGuide = useCallback(() => router.push('/guide'), [router]);
   const goToInventory = useCallback(() => router.push('/inventory'), [router]);
+  const goToResearch = useCallback(() => router.push('/campaigns' as any), [router]);
+
+  const milestone = useMemo(() => {
+    const totalReturns = displayUser?.impact?.totalReturns || 0;
+    const milestones = [
+      { name: 'First Return', target: 1, icon: '🌱' },
+      { name: 'Eco Starter', target: 5, icon: '🌿' },
+      { name: 'Green Champion', target: 15, icon: '🏅' },
+      { name: 'Sustainability Hero', target: 30, icon: '🏆' },
+      { name: 'Planet Guardian', target: 50, icon: '🌍' },
+      { name: 'Eco Legend', target: 100, icon: '💎' },
+    ];
+    const next = milestones.find(m => totalReturns < m.target);
+    if (!next) return { name: 'Eco Legend', progress: 100, remaining: 0, icon: '💎' };
+    const prev = milestones[milestones.indexOf(next) - 1];
+    const base = prev ? prev.target : 0;
+    const progress = Math.round(((totalReturns - base) / (next.target - base)) * 100);
+    return { name: next.name, progress, remaining: next.target - totalReturns, icon: next.icon };
+  }, [displayUser]);
+
+  const envEquivalents = useMemo(() => {
+    const plastic = parseFloat(plasticSaved);
+    const co2 = parseFloat(co2Saved);
+    return {
+      bottles: Math.round(plastic * 20),
+      driving: (co2 * 4).toFixed(1),
+      water: Math.round(plastic * 180),
+    };
+  }, [plasticSaved, co2Saved]);
 
   const formatActivityTime = useCallback((dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -261,6 +291,93 @@ export default function Dashboard() {
             </View>
           </View>
 
+          {/* Milestone */}
+          <View style={styles.sectionMargin}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>Next Milestone</Text>
+              <Text style={[styles.sectionSubtitle, { color: c.textMuted }]}>{milestone.remaining} more to go</Text>
+            </View>
+            <View style={[styles.milestoneCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
+              <View style={styles.milestoneTop}>
+                <View style={[styles.milestoneIconBox, { backgroundColor: '#FBBF24' + '15' }]}>
+                  <Trophy color="#FBBF24" size={22} strokeWidth={1.8} />
+                </View>
+                <View style={{ flex: 1, marginLeft: 14 }}>
+                  <Text style={[styles.milestoneName, { color: c.text }]}>{milestone.icon} {milestone.name}</Text>
+                  <Text style={[styles.milestonePercent, { color: c.textMuted }]}>{milestone.progress}% complete</Text>
+                </View>
+              </View>
+              <View style={[styles.milestoneTrack, { backgroundColor: c.surfaceBorder + '33' }]}>
+                <LinearGradient
+                  colors={['#FBBF24', '#F59E0B']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{
+                    position: 'absolute', top: 0, bottom: 0,
+                    width: `${milestone.progress}%` as any,
+                    borderRadius: 4,
+                  }}
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Research CTA */}
+          <View style={styles.sectionMargin}>
+            <TouchableOpacity
+              style={[styles.researchCta, { borderColor: '#8B5CF6' + '30' }]}
+              onPress={goToResearch}
+              activeOpacity={0.7}
+              accessibilityLabel="Go to campaign evaluation"
+              accessibilityRole="button"
+            >
+              <LinearGradient
+                colors={['#8B5CF6' + '12', '#8B5CF6' + '04']}
+                style={StyleSheet.absoluteFillObject}
+              />
+              <View style={styles.researchCtaContent}>
+                <View style={[styles.researchCtaIcon, { backgroundColor: '#8B5CF6' }]}>
+                  <BarChart3 color="#fff" size={22} strokeWidth={2} />
+                </View>
+                <View style={styles.researchCtaText}>
+                  <Text style={[styles.researchCtaTitle, { color: c.text }]}>Evaluate Campaigns</Text>
+                  <Text style={[styles.researchCtaDesc, { color: c.textMuted }]}>Score social media campaigns and track SDG 12 alignment</Text>
+                </View>
+                <ChevronRight color="#8B5CF6" size={20} />
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* Environmental Equivalents */}
+          <View style={styles.sectionMargin}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>Your Impact</Text>
+            </View>
+            <View style={styles.envGrid}>
+              <View style={[styles.envCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
+                <View style={[styles.envIconBox, { backgroundColor: '#10B981' + '12' }]}>
+                  <Droplets color="#10B981" size={20} strokeWidth={1.8} />
+                </View>
+                <Text style={[styles.envValue, { color: c.text }]}>{envEquivalents.water}L</Text>
+                <Text style={[styles.envLabel, { color: c.textFaint }]}>Water saved</Text>
+              </View>
+              <View style={[styles.envCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
+                <View style={[styles.envIconBox, { backgroundColor: '#3B82F6' + '12' }]}>
+                  <Car color="#3B82F6" size={20} strokeWidth={1.8} />
+                </View>
+                <Text style={[styles.envValue, { color: c.text }]}>{envEquivalents.driving}km</Text>
+                <Text style={[styles.envLabel, { color: c.textFaint }]}>Driving offset</Text>
+              </View>
+              <View style={[styles.envCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
+                <View style={[styles.envIconBox, { backgroundColor: '#F59E0B' + '12' }]}>
+                  <TreePine color="#F59E0B" size={20} strokeWidth={1.8} />
+                </View>
+                <Text style={[styles.envValue, { color: c.text }]}>{envEquivalents.bottles}</Text>
+                <Text style={[styles.envLabel, { color: c.textFaint }]}>Bottles saved</Text>
+              </View>
+            </View>
+          </View>
+
           {/* Community */}
           <View style={styles.sectionMargin}>
             <View style={styles.sectionHeader}>
@@ -309,23 +426,7 @@ export default function Dashboard() {
             </TouchableOpacity>
           </View>
 
-          {/* Impact Narrative */}
-          <View style={styles.sectionMargin}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: c.text }]}>Impact Narrative</Text>
-            </View>
-            <View style={[styles.narrativeCard, { backgroundColor: c.accent + '08', borderColor: c.accent + '15' }]}>
-              <View style={styles.narrativeContent}>
-                <Globe color={c.accent} size={28} strokeWidth={1.5} />
-                <Text style={[styles.narrativeText, { color: c.textSecondary }]}>
-                  You've offset the equivalent of <Text style={{ fontWeight: '800', color: c.text }}>{(parseFloat(co2Saved) * 4).toFixed(1)} km</Text> of driving this month!
-                  Overall, your choice has saved enough resources to produce <Text style={{ fontWeight: '800', color: c.text }}>{Math.floor(parseFloat(plasticSaved) * 20)} new containers</Text>.
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Stats Grid */}
+          {/* Raw Stats */}
           <View style={styles.statsGrid}>
             <View style={[styles.gridItem, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
               <View style={[styles.statIconContainer, { backgroundColor: c.accent + '10' }]}>
@@ -559,4 +660,36 @@ const styles = StyleSheet.create({
 
   globalLoader: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
   microTag: { color: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: '800', letterSpacing: 0.5, marginTop: 4 },
+
+  milestoneCard: {
+    borderRadius: RADIUS, borderWidth: 1, padding: 18,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
+  },
+  milestoneTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
+  milestoneIconBox: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  milestoneName: { fontSize: 16, fontWeight: '800' },
+  milestonePercent: { fontSize: 13, fontWeight: '600', marginTop: 2 },
+  milestoneTrack: { height: 6, borderRadius: 3, width: '100%', overflow: 'hidden' },
+
+  researchCta: {
+    borderRadius: RADIUS, borderWidth: 1, overflow: 'hidden',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
+  },
+  researchCtaContent: { flexDirection: 'row', alignItems: 'center', padding: 18 },
+  researchCtaIcon: { width: 46, height: 46, borderRadius: 13, justifyContent: 'center', alignItems: 'center' },
+  researchCtaText: { flex: 1, marginLeft: 14, marginRight: 4 },
+  researchCtaTitle: { fontSize: 16, fontWeight: '800', marginBottom: 3 },
+  researchCtaDesc: { fontSize: 13, fontWeight: '500', lineHeight: 18 },
+
+  envGrid: { flexDirection: 'row', gap: 10, paddingHorizontal: PADDING },
+  envCard: {
+    flex: 1, borderRadius: RADIUS, borderWidth: 1, padding: 16, alignItems: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03, shadowRadius: 6, elevation: 1,
+  },
+  envIconBox: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
+  envValue: { fontSize: 20, fontWeight: '900', letterSpacing: -0.5 },
+  envLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.3, marginTop: 2 },
 });
