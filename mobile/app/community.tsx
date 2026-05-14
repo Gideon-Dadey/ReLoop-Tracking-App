@@ -1,17 +1,15 @@
-import React from 'react';
-import { StyleSheet, Text, View, FlatList, Image, ActivityIndicator, Platform, RefreshControl, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useCallback } from 'react';
+import { StyleSheet, Text, View, FlatList, Image, Platform, RefreshControl, TouchableOpacity } from 'react-native';
 import { useThemeColors } from '@/src/store/useThemeStore';
 import { apiService } from '@/src/api/service';
+import type { LeaderboardEntry } from '@/src/api/service';
 import { useQuery } from '@tanstack/react-query';
 import { 
-  Users, Star, Leaf, TrendingUp, 
-  ChevronRight, Award, Flame, Globe, ArrowLeft,
-  Trophy
+  Users, Leaf, TrendingUp, Globe, ArrowLeft, Trophy,
 } from 'lucide-react-native';
 import { useRouter, Stack } from 'expo-router';
 
-const { width } = Dimensions.get('window');
-const RADIUS = 10;
+const RADIUS = 14;
 const PADDING = 16;
 
 export default function CommunityScreen() {
@@ -35,7 +33,7 @@ export default function CommunityScreen() {
 
   const isRefreshing = isFetchingStats || isFetchingLeaderboard;
 
-  const renderLeaderboardItem = ({ item, index }: { item: any, index: number }) => {
+  const renderLeaderboardItem = useCallback(({ item, index }: { item: LeaderboardEntry, index: number }) => {
     const isTop3 = index < 3;
     const rankColors = ['#F59E0B', '#94A3B8', '#B45309'];
 
@@ -73,9 +71,9 @@ export default function CommunityScreen() {
         </View>
       </TouchableOpacity>
     );
-  };
+  }, [c]);
 
-  const Header = () => (
+  const Header = useCallback(() => (
     <View style={styles.communityHeader}>
        <View style={[styles.statsGrid]}>
           <View style={[styles.statItem, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
@@ -104,7 +102,7 @@ export default function CommunityScreen() {
           <Text style={[styles.leaderboardTitle, { color: c.text }]}>Monthly Eco-Warriors</Text>
        </View>
     </View>
-  );
+  ), [c, stats]);
 
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>

@@ -1,25 +1,33 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useSyncStore } from '../store/useSyncStore';
 import { apiClient } from '../api/client';
 import { useQueryClient } from '@tanstack/react-query';
 
+const SYNC_INTERVAL_MS = 10_000;
+
 export const useSyncEngine = () => {
-  const { queue, removeFromQueue, clearQueue } = useSyncStore();
-  const [isSyncing, setIsSyncing] = useState(false);
+  const { queue, removeFromQueue } = useSyncStore();
   const queryClient = useQueryClient();
 
-  const processSync = async () => {
-    if (queue.length === 0 || isSyncing) return;
+  const queueRef = useRef(queue);
+  const isSyncingRef = useRef(false);
 
-    setIsSyncing(true);
+  useEffect(() => {
+    queueRef.current = queue;
+  }, [queue]);
+
+  const processSync = useCallback(async () => {
+    const currentQueue = queueRef.current;
+    if (currentQueue.length === 0 || isSyncingRef.current) return;
+
+    isSyncingRef.current = true;
     try {
-      const sanitizedEvents = queue.map(({ id, ...rest }) => rest);
+      const sanitizedEvents = currentQueue.map(({ id, ...rest }) => rest);
       const { data } = await apiClient.post('/sync/bulk', { events: sanitizedEvents });
-      
-      data.results.forEach((res: any) => {
+
+      data.results.forEach((res: { success: boolean; serialNumber: string }) => {
         if (res.success) {
-          // Find and remove from queue
-          const item = queue.find(q => q.serialNumber === res.serialNumber);
+          const item = currentQueue.find((q) => q.serialNumber === res.serialNumber);
           if (item) removeFromQueue(item.id);
         }
       });
@@ -27,18 +35,18 @@ export const useSyncEngine = () => {
     } catch (error) {
       console.error('Sync error:', error);
     } finally {
-      setIsSyncing(false);
+      isSyncingRef.current = false;
     }
-  };
+  }, [removeFromQueue, queryClient]);
 
-  // Simple interval-based sync for demo, in real app use NetInfo
   useEffect(() => {
-    const timer = setInterval(() => {
-      processSync();
-    }, 10000); // Try every 10 seconds
-
+    const timer = setInterval(processSync, SYNC_INTERVAL_MS);
     return () => clearInterval(timer);
-  }, [queue, isSyncing]);
+  }, [processSync]);
 
-  return { isSyncing, queueCount: queue.length, processSync };
+  return {
+    isSyncing: isSyncingRef.current,
+    queueCount: queue.length,
+    processSync,
+  };
 };

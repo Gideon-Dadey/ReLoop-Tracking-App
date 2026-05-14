@@ -1,19 +1,22 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, FlatList, TouchableOpacity, ActivityIndicator, Modal, Alert } from 'react-native';
+import React, { useState, useMemo, useCallback } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Modal, Alert } from 'react-native';
+import { Skeleton, ButtonLoader } from './Skeleton';
 import { Gift, Star, QrCode, CheckCircle, X, ChevronRight } from 'lucide-react-native';
 import { useAuthStore } from '../src/store/useAuthStore';
 import { useThemeColors } from '../src/store/useThemeStore';
 import { apiService } from '../src/api/service';
+import type { Reward } from '../src/api/service';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-const RADIUS = 10;
+const RADIUS = 14;
 
 export default function RewardsSection() {
   const { user, accessToken } = useAuthStore();
   const c = useThemeColors();
   const qc = useQueryClient();
-  const [selectedReward, setSelectedReward] = useState<any>(null);
+  const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
   const [redemptionStep, setRedemptionStep] = useState<'confirm' | 'success' | 'loading'>('confirm');
+  const [voucherCode, setVoucherCode] = useState('');
 
   const userPoints = user?.points ?? 0;
 
@@ -25,7 +28,8 @@ export default function RewardsSection() {
 
   const redeemMutation = useMutation({
     mutationFn: (id: string) => apiService.redeemReward(id),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      setVoucherCode(data.voucherCode || `RELOOP-${Math.random().toString(36).substr(2, 6).toUpperCase()}`);
       setRedemptionStep('success');
       qc.invalidateQueries({ queryKey: ['user-stats'] });
       qc.invalidateQueries({ queryKey: ['rewards'] });
@@ -33,10 +37,10 @@ export default function RewardsSection() {
     onError: (err: any) => {
       Alert.alert('Error', err.message);
       setSelectedReward(null);
-    }
+    },
   });
 
-  const handleRedeemClick = (reward: any) => {
+  const handleRedeemClick = (reward: Reward) => {
      setSelectedReward(reward);
      setRedemptionStep('confirm');
   };
@@ -47,7 +51,7 @@ export default function RewardsSection() {
     redeemMutation.mutate(selectedReward.id || selectedReward._id);
   };
 
-  const renderReward = (item: any) => {
+  const renderReward = useCallback((item: Reward) => {
     const canRedeem = userPoints >= item.points;
     return (
       <TouchableOpacity
@@ -73,14 +77,19 @@ export default function RewardsSection() {
         </View>
       </TouchableOpacity>
     );
-  };
+  }, [c, userPoints]);
 
   return (
     <View style={styles.container}>
       <Text style={[styles.groupLabel, { color: c.textFaint }]}>ECO REWARDS</Text>
       
       <View style={styles.rewardsList}>
-        {isFetching && <ActivityIndicator color={c.accent} style={{ marginVertical: 20 }} />}
+        {isFetching && (
+          <View style={{ gap: 10, marginVertical: 10 }}>
+            <Skeleton width="100%" height={56} borderRadius={14} />
+            <Skeleton width="100%" height={56} borderRadius={14} />
+          </View>
+        )}
         
         {rewards.length > 0 ? (
           rewards.slice(0, 3).map(renderReward)
@@ -136,7 +145,7 @@ export default function RewardsSection() {
 
               {redemptionStep === 'loading' && (
                 <View style={styles.loadingView}>
-                   <ActivityIndicator color={c.accent} size="large" />
+                   <ButtonLoader color={c.accent} />
                    <Text style={[styles.loadingTitle, { color: c.text }]}>Processing...</Text>
                 </View>
               )}
@@ -151,7 +160,7 @@ export default function RewardsSection() {
                    
                    <View style={styles.qrContainer}>
                       <QrCode color={c.text} size={150} strokeWidth={1} />
-                      <Text style={[styles.voucherCode, { color: c.text }]}>RELOOP-{Math.random().toString(36).substr(2, 6).toUpperCase()}</Text>
+                      <Text style={[styles.voucherCode, { color: c.text }]}>{voucherCode}</Text>
                    </View>
 
                    <TouchableOpacity 
@@ -204,16 +213,16 @@ const styles = StyleSheet.create({
 
   // Modal Styles
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 },
-  modalContent: { padding: 24, borderRadius: 10 },
+  modalContent: { padding: 24, borderRadius: 20 },
   closeBtn: { alignSelf: 'flex-end', width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   confirmView: { alignItems: 'center' },
   modalIconHuge: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
   modalTitle: { fontSize: 24, fontWeight: '800', textAlign: 'center' },
   modalVendor: { fontSize: 15, marginTop: 6, opacity: 0.8 },
-  costBox: { width: '100%', padding: 16, borderRadius: 12, borderWidth: 1, marginTop: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  costBox: { width: '100%', padding: 16, borderRadius: RADIUS, borderWidth: 1, marginTop: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   costLabel: { fontSize: 11, fontWeight: '800' },
   costValue: { fontSize: 16, fontWeight: '800' },
-  redeemActionBtn: { width: '100%', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 16 },
+  redeemActionBtn: { width: '100%', padding: 16, borderRadius: RADIUS, alignItems: 'center', marginTop: 16 },
   redeemActionText: { color: '#fff', fontSize: 16, fontWeight: '800' },
   loadingView: { height: 300, justifyContent: 'center', alignItems: 'center' },
   loadingTitle: { marginTop: 16, fontSize: 16, fontWeight: '600' },
@@ -221,6 +230,6 @@ const styles = StyleSheet.create({
   successInstructions: { fontSize: 14, textAlign: 'center', marginTop: 8 },
   qrContainer: { marginTop: 24, alignItems: 'center', gap: 16 },
   voucherCode: { fontSize: 20, fontWeight: '900', letterSpacing: 2 },
-  doneBtn: { width: '100%', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 32 },
+  doneBtn: { width: '100%', padding: 16, borderRadius: RADIUS, alignItems: 'center', marginTop: 32 },
   doneBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 });

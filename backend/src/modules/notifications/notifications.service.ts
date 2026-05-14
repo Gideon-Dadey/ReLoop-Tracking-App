@@ -59,7 +59,15 @@ export class NotificationsService {
       .exec();
   }
 
-  async markAsRead(notificationId: string) {
-    return this.notificationModel.findByIdAndUpdate(notificationId, { isRead: true }, { new: true }).exec();
+  async markAsRead(notificationId: string, userId: string) {
+    const notification = await this.notificationModel.findOneAndUpdate(
+      { _id: notificationId, userId: new Types.ObjectId(userId) },
+      { isRead: true },
+      { new: true },
+    ).exec();
+    if (!notification) {
+      throw new Error('Notification not found');
+    }
+    return notification;
   }
 }

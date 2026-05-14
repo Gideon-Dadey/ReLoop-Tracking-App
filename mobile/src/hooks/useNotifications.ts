@@ -1,25 +1,36 @@
-import * as Notifications from 'expo-notifications';
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
+import { useNotificationPreferencesStore } from '@/src/store/useNotificationPreferences';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+const isExpoGo = Constants.appOwnership === 'expo';
+
+let Notifications: typeof import('expo-notifications') | null = null;
+if (!isExpoGo) {
+  Notifications = require('expo-notifications');
+  Notifications!.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+}
 
 export function useNotifications() {
-  const notificationListener = useRef<Notifications.EventSubscription>(null);
-  const responseListener = useRef<Notifications.EventSubscription>(null);
+  const notificationsEnabled = useNotificationPreferencesStore((s) => s.notificationsEnabled);
+  const notificationListener = useRef<any>(null);
+  const responseListener = useRef<any>(null);
 
   useEffect(() => {
-    registerForPushNotificationsAsync();
+    if (!Notifications) return;
+
+    if (notificationsEnabled) {
+      registerForPushNotificationsAsync();
+    }
 
     notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
       console.log('Notification received:', notification);
@@ -33,9 +44,10 @@ export function useNotifications() {
       notificationListener.current?.remove();
       responseListener.current?.remove();
     };
-  }, []);
+  }, [notificationsEnabled]);
 
   const showLocalNotification = async (title: string, body: string, data?: any) => {
+    if (!Notifications || !notificationsEnabled) return;
     await Notifications.scheduleNotificationAsync({
       content: {
         title,
@@ -43,7 +55,7 @@ export function useNotifications() {
         data: data || {},
         sound: true,
       },
-      trigger: null, // show immediately
+      trigger: null,
     });
   };
 
@@ -51,6 +63,8 @@ export function useNotifications() {
 }
 
 async function registerForPushNotificationsAsync() {
+  if (!Notifications) return;
+
   let token;
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {

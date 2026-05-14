@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, Platform, ActivityIndicator, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, Platform, Image } from 'react-native';
+import { Skeleton, ButtonLoader } from '@/components/Skeleton';
 import { Camera, CameraView } from 'expo-camera';
 import { useSyncStore } from '@/src/store/useSyncStore';
 import { useAuthStore } from '@/src/store/useAuthStore';
@@ -12,7 +13,7 @@ import * as Haptics from 'expo-haptics';
 import { useNotifications } from '@/src/hooks/useNotifications';
 import { useRouter } from 'expo-router';
 
-const RADIUS = 10;
+const RADIUS = 14;
 
 export default function ScannerScreen() {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
@@ -21,10 +22,11 @@ export default function ScannerScreen() {
   const cameraRef = useRef<CameraView>(null);
   
   const [step, setStep] = useState<'SCAN' | 'PHOTO' | 'VERIFY'>('SCAN');
+  const stepRef = useRef(step);
   const [activeBarcode, setActiveBarcode] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
 
-  const { user } = useAuthStore();
+  const { user, updateUser } = useAuthStore();
   const { addToQueue } = useSyncStore();
   const c = useThemeColors();
   const queryClient = useQueryClient();
@@ -39,14 +41,22 @@ export default function ScannerScreen() {
     })();
   }, []);
 
-  const handleBarCodeScanned = async ({ data }: { data: string }) => {
+  useEffect(() => {
+    stepRef.current = step;
+  }, [step]);
+
+  const handleBarCodeScanned = async ({ data }: { data?: string | null }) => {
     if (isScanning.current) return;
+    if (stepRef.current !== 'SCAN') return;
+
+    const code = (data ?? '').toString().trim();
+    if (!code) return;
     
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 
-    setActiveBarcode(data);
+    setActiveBarcode(code);
     setScanned(true);
     isScanning.current = true;
     setStep('PHOTO'); 
@@ -58,7 +68,7 @@ export default function ScannerScreen() {
     setStep('VERIFY');
 
     try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.5, base64: true });
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.3, base64: true });
       const verifyResult = await apiService.verifyClean(activeBarcode!, photo!.base64!);
       
       if (!verifyResult.success) {
@@ -67,6 +77,11 @@ export default function ScannerScreen() {
 
       const userEmail = user?.email || '';
       const result = await apiService.returnContainer(activeBarcode!, userEmail);
+      
+      // Immediate state synchronization
+      if (result.user) {
+        updateUser(result.user);
+      }
       
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -86,9 +101,12 @@ export default function ScannerScreen() {
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
-      Alert.alert('Verification Failed', error.message || 'Something went wrong during AI analysis.');
-      setStep('PHOTO');
-      setIsVerifying(false);
+      Alert.alert(
+        'Verification Failed',
+        error.message || 'Something went wrong during AI analysis. Please scan again.'
+      );
+      // Reset fully so the user can scan the next container immediately.
+      resetScanner();
     }
   };
 
@@ -103,7 +121,11 @@ export default function ScannerScreen() {
   if (hasPermission === null) {
     return (
       <View style={[styles.center, { backgroundColor: c.bg }]}>
-        <ActivityIndicator color={c.accent} size="large" />
+        <View style={{ alignItems: 'center', gap: 16 }}>
+          <Skeleton width={64} height={64} borderRadius={32} />
+          <Skeleton width={160} height={14} />
+          <Skeleton width={120} height={12} />
+        </View>
       </View>
     );
   }
@@ -125,9 +147,23 @@ export default function ScannerScreen() {
       <CameraView
         ref={cameraRef}
         style={StyleSheet.absoluteFillObject}
-        onBarcodeScanned={step === 'SCAN' ? handleBarCodeScanned : undefined}
+        onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
         barcodeScannerSettings={{ 
-          barcodeTypes: ['qr'],
+          barcodeTypes: [
+            'qr',
+            'code128',
+            'code39',
+            'code93',
+            'ean13',
+            'ean8',
+            'pdf417',
+            'upc_e',
+            'upc_a',
+            'datamatrix',
+            'aztec',
+            'itf14',
+            'codabar',
+          ],
         }}
       />
 
@@ -158,7 +194,7 @@ export default function ScannerScreen() {
            {step === 'VERIFY' && (
              <View style={styles.verifyingContainer}>
                 <View style={styles.blurredBg} />
-                <ActivityIndicator color="#fff" size="large" />
+                <ButtonLoader color="#fff" />
                 <Text style={styles.verifyingTitle}>Analyzing Container...</Text>
                 <Text style={styles.verifyingSub}>Our AI is checking for residue and moisture.</Text>
              </View>
@@ -168,7 +204,7 @@ export default function ScannerScreen() {
 
       {/* Default Scanner Overlay */}
       {step === 'SCAN' && (
-        <View style={styles.overlay}>
+        <View style={styles.overlay} pointerEvents="none">
           <View style={styles.topBar}>
             <Text style={styles.topTitle}>Scan Container</Text>
             <Text style={styles.topSub}>Point at a ReLoop QR code</Text>
@@ -217,7 +253,7 @@ const styles = StyleSheet.create({
   // New Verification Styles
   stepOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' },
   photoContainer: { flex: 1, width: '100%', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 80 },
-  instructionBox: { padding: 24, borderRadius: 10, width: '85%', alignItems: 'center' },
+  instructionBox: { padding: 24, borderRadius: RADIUS, width: '85%', alignItems: 'center' },
   instructionTitle: { color: '#fff', fontSize: 20, fontWeight: '800', marginTop: 12 },
   instructionSub: { color: 'rgba(255,255,255,0.8)', fontSize: 14, textAlign: 'center', marginTop: 8, lineHeight: 20 },
   

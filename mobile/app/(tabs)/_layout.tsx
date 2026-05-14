@@ -1,43 +1,24 @@
 import React from 'react';
 import { Platform, View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Tabs } from 'expo-router';
-import { Home, UserCircle, History, Scan, ClipboardList, Gift, Map, Package } from 'lucide-react-native';
+import { LayoutGrid, Layers, ScanLine, FlaskConical, UserRound } from 'lucide-react-native';
 import { useThemeColors } from '@/src/store/useThemeStore';
 
-const ExactScanIcon = ({ color, size }: { color: string, size: number }) => {
-  const gridPadding = size * 0.28;
-  const dotSize = size * 0.16;
-  const gap = size * 0.05;
+const ScanIcon = ({ color, size }: { color: string; size: number }) => (
+  <ScanLine color={color} size={size} strokeWidth={2.5} />
+);
 
-  return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      <Scan color={color} size={size} strokeWidth={2.5} />
-      <View style={{
-        position: 'absolute',
-        width: size * 0.45,
-        height: size * 0.45,
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        alignContent: 'space-between'
-      }}>
-        <View style={{ width: dotSize, height: dotSize, backgroundColor: color, borderRadius: 1.5 }} />
-        <View style={{ width: dotSize, height: dotSize, backgroundColor: color, borderRadius: 1.5 }} />
-        <View style={{ width: dotSize, height: dotSize, backgroundColor: color, borderRadius: 1.5 }} />
-        <View style={{ width: dotSize, height: dotSize, backgroundColor: color, borderRadius: dotSize / 2 }} />
-      </View>
-    </View>
-  );
-};
-
-const CustomScanButton = ({ children, onPress }: { children: any, onPress?: any }) => {
+const CustomScanButton = ({ children, onPress }: { children: React.ReactNode; onPress?: () => void }) => {
+  const c = useThemeColors();
   return (
     <TouchableOpacity
       style={styles.scanButtonContainer}
       activeOpacity={0.8}
       onPress={onPress}
+      accessibilityLabel="Scan container"
+      accessibilityRole="button"
     >
-      <View style={styles.scanButton}>
+      <View style={[styles.scanButton, { backgroundColor: c.accent }]}>
         {children}
       </View>
     </TouchableOpacity>
@@ -58,15 +39,14 @@ export default function TabLayout() {
           backgroundColor: c.tabBg,
           borderTopColor: c.tabBorder,
           borderTopWidth: 0.5,
-          height: Platform.OS === 'ios' ? 84 : 64,
-          paddingTop: 8,
-          paddingBottom: Platform.OS === 'ios' ? 24 : 10,
+          height: Platform.OS === 'ios' ? 84 : 72,
+          paddingTop: 10,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 16,
+          paddingHorizontal: 8,
           elevation: 0,
         },
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '700',
-          marginTop: 2,
+        tabBarItemStyle: {
+          paddingVertical: 4,
         },
       }}>
       <Tabs.Screen
@@ -74,7 +54,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <Home color={color} size={24} strokeWidth={focused ? 2 : 1.5} />
+            <LayoutGrid color={color} size={22} strokeWidth={focused ? 2.2 : 1.4} />
           ),
         }}
       />
@@ -83,7 +63,7 @@ export default function TabLayout() {
         options={{
           title: 'Activity',
           tabBarIcon: ({ color, focused }) => (
-            <ClipboardList color={color} size={24} strokeWidth={focused ? 2 : 1.5} />
+            <Layers color={color} size={22} strokeWidth={focused ? 2.2 : 1.4} />
           ),
         }}
       />
@@ -91,18 +71,18 @@ export default function TabLayout() {
         name="scanner"
         options={{
           title: '',
-          tabBarIcon: ({ color }) => (
-            <ExactScanIcon color="#fff" size={28} />
+          tabBarIcon: () => (
+            <ScanIcon color="#fff" size={26} />
           ),
           tabBarButton: (props) => <CustomScanButton {...props} />,
         }}
       />
       <Tabs.Screen
-        name="map"
+        name="research"
         options={{
-          title: 'Nearby',
+          title: 'Research',
           tabBarIcon: ({ color, focused }) => (
-            <Map color={color} size={24} strokeWidth={focused ? 2 : 1.5} />
+            <FlaskConical color={color} size={22} strokeWidth={focused ? 2.2 : 1.4} />
           ),
         }}
       />
@@ -111,7 +91,7 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
-            <UserCircle color={color} size={24} strokeWidth={focused ? 2 : 1.5} />
+            <UserRound color={color} size={22} strokeWidth={focused ? 2.2 : 1.4} />
           ),
         }}
       />
@@ -121,15 +101,16 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   scanButtonContainer: {
-    top: -24,
+    top: -20,
     justifyContent: 'center',
     alignItems: 'center',
+    width: 72,
   },
   scanButton: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: '#111827',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#10B981',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',

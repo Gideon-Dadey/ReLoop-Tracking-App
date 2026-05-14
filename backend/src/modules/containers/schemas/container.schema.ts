@@ -11,16 +11,16 @@ export enum ContainerStatus {
 
 @Schema({ timestamps: true })
 export class Container extends Document {
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true, unique: true, trim: true })
   serialNumber: string;
 
   @Prop({ required: true })
-  type: string; // e.g. 'Coffee Cup', 'Lunch Box'
+  type: string;
 
-  @Prop({ type: String, enum: ContainerStatus, default: ContainerStatus.AVAILABLE })
+  @Prop({ type: String, enum: ContainerStatus, default: ContainerStatus.AVAILABLE, index: true })
   status: ContainerStatus;
 
-  @Prop({ type: Types.ObjectId, ref: 'User' })
+  @Prop({ type: Types.ObjectId, ref: 'User', index: true })
   currentUserId?: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'Organization' })
@@ -34,3 +34,5 @@ export class Container extends Document {
 }
 
 export const ContainerSchema = SchemaFactory.createForClass(Container);
+
+ContainerSchema.index({ currentUserId: 1, status: 1 });

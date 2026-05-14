@@ -141,6 +141,7 @@ export class ContainersService {
     user.points += points + streakBonus;
     user.impact.plasticSaved += plasticSaved;
     user.impact.co2Saved += co2Saved;
+    user.impact.totalReturns = (user.impact.totalReturns || 0) + 1;
     user.markModified('impact');
     await user.save();
 
@@ -169,7 +170,16 @@ export class ContainersService {
     return { 
       message: 'Container returned successfully',
       impact: { plasticSaved, co2Saved, points: points + streakBonus, streakBonus, streakCount: user.streakCount },
-      container 
+      container,
+      user: {
+        id: user._id,
+        email: user.email,
+        userName: user.userName,
+        points: user.points,
+        streakCount: user.streakCount,
+        impact: user.impact,
+        avatar: user.avatar,
+      },
     };
   }
 

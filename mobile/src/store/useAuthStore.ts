@@ -19,12 +19,13 @@ interface User {
   email: string;
   userName: string;
   role: 'user' | 'vendor' | 'admin';
-  organizationId: any;
+  organizationId?: string;
   points: number;
   streakCount: number;
   lastReturnAt?: string;
   weeklyGoal?: { current: number; target: number; percent: number };
-  impact: { plasticSaved: number; co2Saved: number };
+  impact: { plasticSaved: number; co2Saved: number; totalReturns: number };
+  activeBorrows?: number;
   avatar?: string;
   createdAt?: string;
 }

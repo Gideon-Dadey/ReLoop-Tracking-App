@@ -1,19 +1,20 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Dimensions, Platform, ActivityIndicator, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, useWindowDimensions, Platform, ScrollView } from 'react-native';
+import { MapSkeleton } from '@/components/Skeleton';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
+import { Stack, router } from 'expo-router';
 import { 
   MapPin, Navigation, Search, Filter, 
   ChevronRight, LocateFixed, Droplet, 
-  Layers, Package, Shapes, Trash2, Box
+  Layers, Package, Shapes, Box, ArrowLeft,
 } from 'lucide-react-native';
 import { useThemeColors } from '@/src/store/useThemeStore';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '@/src/api/service';
+import type { Vendor } from '@/src/api/service';
 
-const { width, height } = Dimensions.get('window');
-const RADIUS = 10;
-const PADDING = 16;
+const RADIUS = 14;
 
 const MATERIAL_FILTERS = [
   { id: 'All', label: 'All', icon: Shapes, color: '#8B5CF6' },
@@ -25,9 +26,10 @@ const MATERIAL_FILTERS = [
 
 export default function MapScreen() {
   const c = useThemeColors();
+  const { width, height } = useWindowDimensions();
   const mapRef = useRef<MapView>(null);
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
-  const [selectedVendor, setSelectedVendor] = useState<any>(null);
+  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [activeFilter, setActiveFilter] = useState('All');
 
   const { data: vendors = [], isLoading } = useQuery({
@@ -37,7 +39,7 @@ export default function MapScreen() {
 
   const filteredVendors = useMemo(() => {
     if (activeFilter === 'All') return vendors;
-    return vendors.filter((v: any) => 
+    return vendors.filter((v) => 
       v.acceptedMaterials?.includes(activeFilter)
     );
   }, [vendors, activeFilter]);
@@ -46,13 +48,13 @@ export default function MapScreen() {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
-        let location = await Location.getCurrentPositionAsync({});
-        setLocation(location);
+        let loc = await Location.getCurrentPositionAsync({});
+        setLocation(loc);
       }
     })();
   }, []);
 
-  const centerOnUser = () => {
+  const centerOnUser = useCallback(() => {
     if (location) {
       mapRef.current?.animateToRegion({
         latitude: location.coords.latitude,
@@ -61,24 +63,24 @@ export default function MapScreen() {
         longitudeDelta: 0.01,
       }, 1000);
     }
-  };
+  }, [location]);
 
-  const getMarkerColor = (vendor: any) => {
+  const getMarkerColor = useCallback((vendor: Vendor) => {
     if (activeFilter !== 'All') {
       const filter = MATERIAL_FILTERS.find(f => f.id === activeFilter);
       return filter?.color || c.accent;
     }
-    // If multiple, maybe return accent or a specific logic
     if (vendor.acceptedMaterials?.includes('Glass')) return '#3B82F6';
     if (vendor.acceptedMaterials?.includes('Plastic')) return '#10B981';
     return c.accent;
-  };
+  }, [activeFilter, c.accent]);
 
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>
+      <Stack.Screen options={{ headerShown: false }} />
       <MapView
         ref={mapRef}
-        style={styles.map}
+        style={{ width, height }}
         initialRegion={{
           latitude: 5.6037,
           longitude: -0.1870,
@@ -89,9 +91,9 @@ export default function MapScreen() {
         showsMyLocationButton={false}
         provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
         onPress={() => setSelectedVendor(null)}
-        customMapStyle={MapStyle} // Use custom dark/light style if available
+        customMapStyle={MapStyle}
       >
-        {filteredVendors.map((vendor: any) => (
+        {filteredVendors.map((vendor) => (
           vendor.location && (
             <Marker
               key={vendor._id}
@@ -106,12 +108,21 @@ export default function MapScreen() {
         ))}
       </MapView>
 
-      {/* Top Filter & Search Section */}
+      {/* Top Bar: Back + Search */}
       <View style={styles.topContainer}>
-         <View style={[styles.searchBar, { backgroundColor: c.tabBg, borderColor: c.surfaceBorder }]}>
-            <Search color={c.textMuted} size={20} />
-            <Text style={[styles.searchPlaceholder, { color: c.textMuted }]}>Find recycling points...</Text>
-            <Filter color={c.textMuted} size={18} />
+         <View style={styles.topRow}>
+           <TouchableOpacity
+             style={[styles.backButton, { backgroundColor: c.tabBg, borderColor: c.surfaceBorder }]}
+             onPress={() => router.back()}
+             activeOpacity={0.8}
+           >
+             <ArrowLeft color={c.text} size={20} />
+           </TouchableOpacity>
+           <View style={[styles.searchBar, { backgroundColor: c.tabBg, borderColor: c.surfaceBorder }]}>
+              <Search color={c.textMuted} size={18} />
+              <Text style={[styles.searchPlaceholder, { color: c.textMuted }]}>Find recycling points...</Text>
+              <Filter color={c.textMuted} size={16} />
+           </View>
          </View>
 
          <ScrollView 
@@ -161,7 +172,7 @@ export default function MapScreen() {
                <View style={styles.sheetHeaderLeft}>
                   <Text style={[styles.vendorName, { color: c.text }]}>{selectedVendor.name}</Text>
                   <View style={styles.badgeRow}>
-                     {selectedVendor.acceptedMaterials?.map((m: string) => (
+                     {selectedVendor.acceptedMaterials?.map((m) => (
                         <View key={m} style={[styles.materialBadge, { backgroundColor: c.surfaceBorder + '50' }]}>
                            <Text style={[styles.materialBadgeText, { color: c.textSecondary }]}>{m}</Text>
                         </View>
@@ -195,18 +206,30 @@ export default function MapScreen() {
 
       {isLoading && (
         <View style={styles.loadingOverlay}>
-           <ActivityIndicator size="large" color={c.accent} />
+           <MapSkeleton />
         </View>
       )}
     </View>
   );
 }
 
-const MapStyle = []; // Add sophisticated map styling here for production look
+const MapStyle: any[] = [];
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  map: { width: width, height: height },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
   markerContainer: {
     padding: 6,
     borderRadius: 12,
@@ -224,13 +247,19 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 10,
   },
-  searchBar: {
-    marginHorizontal: 20,
-    height: 54,
-    borderRadius: 27,
+  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
+    gap: 10,
+  },
+  searchBar: {
+    flex: 1,
+    height: 44,
+    borderRadius: 22,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
     borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },

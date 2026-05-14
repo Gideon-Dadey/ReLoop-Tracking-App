@@ -8,16 +8,16 @@ export enum TransactionType {
 
 @Schema({ timestamps: true })
 export class Transaction extends Document {
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
   userId: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  vendorId: Types.ObjectId; // Each transaction is mediated by a vendor
+  vendorId: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'Container', required: true })
   containerId: Types.ObjectId;
 
-  @Prop({ type: String, enum: TransactionType, required: true })
+  @Prop({ type: String, enum: TransactionType, required: true, index: true })
   type: TransactionType;
 
   @Prop({ required: true })
@@ -33,7 +33,7 @@ export class Transaction extends Document {
   streakBonus: number;
 
   @Prop()
-  signature: string; // Placeholder for blockchain hash
+  signature: string;
 
   @Prop({ type: Types.ObjectId, ref: 'Organization' })
   organizationId: Types.ObjectId;
@@ -43,3 +43,6 @@ export class Transaction extends Document {
 }
 
 export const TransactionSchema = SchemaFactory.createForClass(Transaction);
+
+TransactionSchema.index({ userId: 1, createdAt: -1 });
+TransactionSchema.index({ userId: 1, type: 1, createdAt: -1 });

@@ -4,12 +4,19 @@ import { useFonts } from 'expo-font';
 import { Stack, Redirect, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/src/store/useAuthStore';
 import { useSyncEngine } from '@/src/hooks/useSyncEngine';
-import { useThemeStore } from '@/src/store/useThemeStore';
+import { useThemeStore, useThemeColors } from '@/src/store/useThemeStore';
+import * as NavigationBar from 'expo-navigation-bar';
 
 const queryClient = new QueryClient();
+
+if (Platform.OS === 'android') {
+  NavigationBar.setBackgroundColorAsync('#0A0F1A');
+  NavigationBar.setButtonStyleAsync('light');
+}
 
 export {
   ErrorBoundary,
@@ -54,19 +61,27 @@ function RootLayoutNav() {
   const { user } = useAuthStore();
   const { queueCount } = useSyncEngine();
   const mode = useThemeStore((s) => s.mode);
+  const c = useThemeColors();
   const segments = useSegments();
+
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      NavigationBar.setBackgroundColorAsync(c.tabBg);
+      NavigationBar.setButtonStyleAsync(mode === 'dark' ? 'light' : 'dark');
+    }
+  }, [mode, c.tabBg]);
 
   const inAuthGroup = segments[0] === '(auth)';
 
   return (
     <ThemeProvider value={mode === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg }, animation: 'fade' }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="(auth)/login" />
         <Stack.Screen name="(auth)/register" />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
-      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
+      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} translucent backgroundColor="transparent" />
       {/* Auth redirects */}
       {!user && !inAuthGroup && <Redirect href="/(auth)/login" />}
       {user && inAuthGroup && <Redirect href="/(tabs)" />}

@@ -1,12 +1,14 @@
 import axios from 'axios';
+import Constants from 'expo-constants';
 import { useAuthStore } from '../store/useAuthStore';
 
-// Use your computer's local network IP so the phone can reach the backend
-// Update this IP if your network changes
-const API_URL = 'http://192.168.180.80:3000'; // Current Host IP
+const API_URL =
+  Constants.expoConfig?.extra?.apiUrl ??
+  (process.env.EXPO_PUBLIC_API_URL || 'http://192.168.0.32:3000');
 
 export const apiClient = axios.create({
   baseURL: API_URL,
+  timeout: 15000,
 });
 
 apiClient.interceptors.request.use((config) => {
@@ -17,20 +19,63 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Optional: Response interceptor for handling 401s and refreshing tokens
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (token: string) => void;
+  reject: (error: unknown) => void;
+}> = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) prom.reject(error);
+    else prom.resolve(token!);
+  });
+  failedQueue = [];
+};
+
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      // Refresh logic would go here
-      // const refreshToken = useAuthStore.getState().refreshToken;
-      // const { data } = await axios.post(`${API_URL}/auth/refresh`, { token: refreshToken });
-      // useAuthStore.getState().setAuth(data.user, data.accessToken, data.refreshToken);
-      // originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
-      // return apiClient(originalRequest);
+
+    if (error.response?.status !== 401 || originalRequest._retry) {
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
-  }
+
+    if (isRefreshing) {
+      return new Promise<string>((resolve, reject) => {
+        failedQueue.push({ resolve, reject });
+      }).then((token) => {
+        originalRequest.headers.Authorization = `Bearer ${token}`;
+        return apiClient(originalRequest);
+      });
+    }
+
+    originalRequest._retry = true;
+    isRefreshing = true;
+
+    const refreshToken = useAuthStore.getState().refreshToken;
+    if (!refreshToken) {
+      useAuthStore.getState().logout();
+      isRefreshing = false;
+      return Promise.reject(error);
+    }
+
+    try {
+      const { data } = await axios.post(`${API_URL}/auth/refresh`, {
+        token: refreshToken,
+      });
+      const newToken = data.accessToken;
+      useAuthStore.getState().setAuth(data.user, newToken, data.refreshToken);
+      processQueue(null, newToken);
+      originalRequest.headers.Authorization = `Bearer ${newToken}`;
+      return apiClient(originalRequest);
+    } catch (refreshError) {
+      processQueue(refreshError, null);
+      useAuthStore.getState().logout();
+      return Promise.reject(refreshError);
+    } finally {
+      isRefreshing = false;
+    }
+  },
 );

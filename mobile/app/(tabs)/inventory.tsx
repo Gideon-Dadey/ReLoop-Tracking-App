@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, FlatList, ActivityIndicator, Platform, RefreshControl, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { StyleSheet, Text, View, FlatList, Platform, RefreshControl, TouchableOpacity } from 'react-native';
+import { InventorySkeleton } from '@/components/Skeleton';
 import { useThemeColors } from '@/src/store/useThemeStore';
 import { apiService } from '@/src/api/service';
+import type { Container, Transaction } from '@/src/api/service';
 import { useQuery } from '@tanstack/react-query';
 import { 
   Package, ArrowUpRight, ArrowDownLeft, 
@@ -10,8 +12,7 @@ import {
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 
-const { width } = Dimensions.get('window');
-const RADIUS = 10;
+const RADIUS = 14;
 const PADDING = 16;
 
 const BarcodeGraphic = ({ color, opacity = 0.5 }: { color: string, opacity?: number }) => (
@@ -38,12 +39,12 @@ export default function HistoryScreen() {
   const router = useRouter();
   const [activeSegment, setActiveSegment] = useState<'borrows' | 'history'>('borrows');
 
-  const { data: activeBorrows = [], isFetching: isFetchingActive, refetch: refetchActive } = useQuery({
+  const { data: activeBorrows = [], isFetching: isFetchingActive, isLoading: isLoadingActive, refetch: refetchActive } = useQuery({
     queryKey: ['active-borrows'],
     queryFn: () => apiService.getActiveBorrows(),
   });
 
-  const { data: history = [], isFetching: isFetchingHistory, refetch: refetchHistory } = useQuery({
+  const { data: history = [], isFetching: isFetchingHistory, isLoading: isLoadingHistory, refetch: refetchHistory } = useQuery({
     queryKey: ['transaction-history'],
     queryFn: () => apiService.getTransactionHistory(),
   });
@@ -54,8 +55,9 @@ export default function HistoryScreen() {
   };
 
   const isRefreshing = isFetchingActive || isFetchingHistory;
+  const isInitialLoad = isLoadingActive || isLoadingHistory;
 
-  const renderActiveBorrow = ({ item }: { item: any }) => {
+  const renderActiveBorrow = useCallback(({ item }: { item: Container }) => {
     const issueDate = new Date(item.updatedAt || Date.now());
     const dueDate = new Date(issueDate);
     dueDate.setDate(dueDate.getDate() + 14);
@@ -103,9 +105,9 @@ export default function HistoryScreen() {
         </View>
       </TouchableOpacity>
     );
-  };
+  }, [c, router]);
 
-  const renderHistoryItem = ({ item }: { item: any }) => {
+  const renderHistoryItem = useCallback(({ item }: { item: Transaction }) => {
     const isReturn = item.type === 'RETURN';
     const date = new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const time = new Date(item.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
@@ -137,7 +139,11 @@ export default function HistoryScreen() {
          </View>
       </TouchableOpacity>
     );
-  };
+  }, [c]);
+
+  if (isInitialLoad) {
+    return <InventorySkeleton />;
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>
@@ -179,7 +185,7 @@ export default function HistoryScreen() {
           <FlatList
             data={activeBorrows}
             renderItem={renderActiveBorrow}
-            keyExtractor={(item: any) => item._id}
+            keyExtractor={(item) => item._id}
             contentContainerStyle={styles.listPadding}
             showsVerticalScrollIndicator={false}
             refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={c.accent} />}
@@ -195,7 +201,7 @@ export default function HistoryScreen() {
           <FlatList
             data={history}
             renderItem={renderHistoryItem}
-            keyExtractor={(item: any) => item._id}
+            keyExtractor={(item) => item._id}
             contentContainerStyle={styles.listPadding}
             showsVerticalScrollIndicator={false}
             refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={c.accent} />}
@@ -245,7 +251,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   activeHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  statusBadge: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4, paddingHorizontal: 10, borderRadius: 10, gap: 6 },
+  statusBadge: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4, paddingHorizontal: 10, borderRadius: RADIUS, gap: 6 },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
   statusText: { fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
   idText: { fontSize: 11, fontWeight: '600' },
@@ -292,7 +298,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    borderRadius: 10,
+    borderRadius: RADIUS,
     borderWidth: 1,
     gap: 12,
   },

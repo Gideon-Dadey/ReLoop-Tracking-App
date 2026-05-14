@@ -1,40 +1,41 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ActivityIndicator, Platform, Image } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  StyleSheet, Text, View, TextInput, TouchableOpacity,
+  Alert, Platform, Image, KeyboardAvoidingView,
+} from 'react-native';
+import { ButtonLoader } from '@/components/Skeleton';
+import * as SecureStore from 'expo-secure-store';
 import { useAuthStore } from '@/src/store/useAuthStore';
-import { useThemeStore, useThemeColors } from '@/src/store/useThemeStore';
+import { useThemeColors } from '@/src/store/useThemeStore';
 import { apiService } from '@/src/api/service';
-import { Sun, Moon, Check } from 'lucide-react-native';
+import { Check, Eye, EyeOff } from 'lucide-react-native';
 import { router } from 'expo-router';
 
-const RADIUS = 10;
-const REMEMBER_KEY = 'reloop_remember_me';
+const RADIUS = 14;
+const REMEMBER_KEY = 'reloop_remember_email';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { setAuth } = useAuthStore();
   const c = useThemeColors();
-  const { mode, toggleTheme } = useThemeStore();
 
-  // Load saved credentials on mount
   useEffect(() => {
     (async () => {
       try {
-        const saved = await AsyncStorage.getItem(REMEMBER_KEY);
-        if (saved) {
-          const { email: savedEmail, password: savedPassword } = JSON.parse(saved);
+        const savedEmail = await SecureStore.getItemAsync(REMEMBER_KEY);
+        if (savedEmail) {
           setEmail(savedEmail);
-          setPassword(savedPassword);
           setRememberMe(true);
         }
       } catch {}
     })();
   }, []);
 
-  const handleLogin = async () => {
+  const handleLogin = useCallback(async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please enter email and password');
       return;
@@ -43,11 +44,10 @@ export default function LoginScreen() {
     try {
       const data = await apiService.login(email, password);
 
-      // Save or clear remembered credentials
       if (rememberMe) {
-        await AsyncStorage.setItem(REMEMBER_KEY, JSON.stringify({ email, password }));
+        await SecureStore.setItemAsync(REMEMBER_KEY, email);
       } else {
-        await AsyncStorage.removeItem(REMEMBER_KEY);
+        await SecureStore.deleteItemAsync(REMEMBER_KEY);
       }
 
       setAuth(data.user, data.accessToken, data.refreshToken);
@@ -56,9 +56,9 @@ export default function LoginScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [email, password, rememberMe, setAuth]);
 
-  const handleForgotPassword = () => {
+  const handleForgotPassword = useCallback(() => {
     if (!email) {
       Alert.alert(
         'Reset Password',
@@ -71,18 +71,13 @@ export default function LoginScreen() {
       `A password reset link has been sent to ${email}. Please check your inbox.`,
       [{ text: 'OK' }],
     );
-  };
+  }, [email]);
 
   return (
-    <View style={[styles.container, { backgroundColor: c.bg }]}>
-      <TouchableOpacity onPress={toggleTheme} style={styles.themeBtn} activeOpacity={0.7}>
-        {mode === 'dark' ? (
-          <Sun color={c.textMuted} size={18} strokeWidth={1.8} />
-        ) : (
-          <Moon color={c.textMuted} size={18} strokeWidth={1.8} />
-        )}
-      </TouchableOpacity>
-
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: c.bg }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <View style={styles.header}>
         <Image source={require('../../assets/reloop.png')} style={styles.logoImage} />
         <Text style={[styles.subtitle, { color: c.textMuted, marginTop: 0 }]}>Circular Economy Platform</Text>
@@ -98,24 +93,40 @@ export default function LoginScreen() {
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
+          textContentType="emailAddress"
+          autoComplete="email"
+          returnKeyType="next"
+          accessibilityLabel="Email address"
         />
 
         <Text style={[styles.label, { color: c.textSecondary }]}>Password</Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: c.inputBg, borderColor: c.surfaceBorder, color: c.text }]}
-          placeholder="Enter your password"
-          placeholderTextColor={c.textFaint}
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
+        <View style={[styles.inputRow, { backgroundColor: c.inputBg, borderColor: c.surfaceBorder }]}>
+          <TextInput
+            style={[styles.inputFlex, { color: c.text }]}
+            placeholder="Enter your password"
+            placeholderTextColor={c.textFaint}
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
+            textContentType="password"
+            autoComplete="password"
+            returnKeyType="done"
+            onSubmitEditing={handleLogin}
+            accessibilityLabel="Password"
+          />
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn} activeOpacity={0.6}>
+            {showPassword ? <EyeOff size={20} color={c.textMuted} /> : <Eye size={20} color={c.textMuted} />}
+          </TouchableOpacity>
+        </View>
 
-        {/* Remember Me & Forgot Password Row */}
         <View style={styles.optionsRow}>
           <TouchableOpacity
             style={styles.rememberRow}
             onPress={() => setRememberMe(!rememberMe)}
             activeOpacity={0.7}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: rememberMe }}
+            accessibilityLabel="Remember my email"
           >
             <View style={[
               styles.checkbox,
@@ -127,25 +138,37 @@ export default function LoginScreen() {
             <Text style={[styles.rememberText, { color: c.textSecondary }]}>Remember me</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={handleForgotPassword} activeOpacity={0.7}>
+          <TouchableOpacity
+            onPress={handleForgotPassword}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Forgot password"
+          >
             <Text style={[styles.forgotText, { color: c.accent }]}>Forgot password?</Text>
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity
-          style={[styles.loginButton, { backgroundColor: c.accent }]}
+          style={[styles.loginButton, { backgroundColor: c.accent, opacity: loading ? 0.7 : 1 }]}
           onPress={handleLogin}
           disabled={loading}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Sign in"
         >
           {loading ? (
-            <ActivityIndicator color="#fff" />
+            <ButtonLoader color="#fff" />
           ) : (
             <Text style={styles.loginButtonText}>Sign In</Text>
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.linkButton} onPress={() => router.push('/(auth)/register')}>
+        <TouchableOpacity
+          style={styles.linkButton}
+          onPress={() => router.push('/(auth)/register')}
+          accessibilityRole="link"
+          accessibilityLabel="Go to sign up"
+        >
           <Text style={[styles.linkText, { color: c.accent }]}>Don't have an account? Sign Up</Text>
         </TouchableOpacity>
       </View>
@@ -155,62 +178,51 @@ export default function LoginScreen() {
           By signing in, you agree to our Terms of Service
         </Text>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, justifyContent: 'center' },
-  themeBtn: {
-    position: 'absolute',
-    top: Platform.OS === 'ios' ? 56 : 40,
-    right: 20,
-    width: 40, height: 40,
-    borderRadius: RADIUS,
-    justifyContent: 'center', alignItems: 'center',
-    zIndex: 10,
-  },
-  header: { alignItems: 'center', marginTop: 40, marginBottom: 30 },
-  logoImage: { width: 140, height: 140, marginBottom: 12, borderRadius: 32 },
+  container: { flex: 1, padding: 24, justifyContent: 'center' },
+  header: { alignItems: 'center', marginTop: 20, marginBottom: 32 },
+  logoImage: { width: 100, height: 100, marginBottom: 16, borderRadius: 24 },
   title: { fontSize: 34, fontWeight: '800', marginTop: 4, letterSpacing: -1 },
-  subtitle: { fontSize: 16, marginTop: 4, opacity: 0.7 },
+  subtitle: { fontSize: 14, marginTop: 4, fontWeight: '500' },
   form: { width: '100%', maxWidth: 400, alignSelf: 'center', marginBottom: 20 },
-  label: { fontSize: 13, fontWeight: '600', marginBottom: 8, marginTop: 16 },
-  input: { padding: 16, borderRadius: RADIUS, fontSize: 16, borderWidth: 1 },
-
-  // Remember Me & Forgot Password
+  label: { fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 18, letterSpacing: 0.2 },
+  input: {
+    padding: 16, borderRadius: RADIUS, fontSize: 16, borderWidth: 1,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03, shadowRadius: 4, elevation: 1,
+  },
+  inputRow: {
+    flexDirection: 'row', alignItems: 'center', borderRadius: RADIUS, borderWidth: 1,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03, shadowRadius: 4, elevation: 1,
+  },
+  inputFlex: { flex: 1, padding: 16, fontSize: 16 },
+  eyeBtn: { paddingHorizontal: 14, paddingVertical: 16 },
   optionsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 18,
   },
-  rememberRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  rememberRow: { flexDirection: 'row', alignItems: 'center' },
   checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
+    width: 22, height: 22, borderRadius: 6,
+    borderWidth: 1.5, justifyContent: 'center', alignItems: 'center', marginRight: 8,
   },
-  rememberText: {
-    fontSize: 13,
-    fontWeight: '500',
+  rememberText: { fontSize: 13, fontWeight: '500' },
+  forgotText: { fontSize: 13, fontWeight: '700' },
+  loginButton: {
+    padding: 18, borderRadius: RADIUS, alignItems: 'center', marginTop: 30,
+    shadowColor: '#059669', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
-  forgotText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-
-  loginButton: { padding: 18, borderRadius: RADIUS, alignItems: 'center', marginTop: 28 },
-  loginButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  linkButton: { marginTop: 20, alignItems: 'center' },
+  loginButtonText: { color: '#fff', fontSize: 17, fontWeight: '800', letterSpacing: 0.3 },
+  linkButton: { marginTop: 24, alignItems: 'center' },
   linkText: { fontWeight: '600', fontSize: 14 },
   footer: { paddingBottom: 20, alignItems: 'center' },
-  footerText: { fontSize: 12 },
+  footerText: { fontSize: 11, fontWeight: '500' },
 });

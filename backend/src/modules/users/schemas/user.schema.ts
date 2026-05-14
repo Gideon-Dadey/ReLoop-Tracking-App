@@ -9,19 +9,19 @@ export enum UserRole {
 
 @Schema({ timestamps: true })
 export class User extends Document {
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true, unique: true, lowercase: true, trim: true })
   email: string;
 
   @Prop({ required: true })
   passwordHash: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, trim: true })
   userName: string;
 
-  @Prop({ type: String, enum: UserRole, default: UserRole.USER })
+  @Prop({ type: String, enum: UserRole, default: UserRole.USER, index: true })
   role: UserRole;
 
-  @Prop({ type: Types.ObjectId, ref: 'Organization', default: null })
+  @Prop({ type: Types.ObjectId, ref: 'Organization', default: null, index: true })
   organizationId: Types.ObjectId;
 
   @Prop({ default: 0 })
@@ -33,13 +33,14 @@ export class User extends Document {
   @Prop({ type: Date, default: null })
   lastReturnAt: Date;
 
-  @Prop({ type: Object, default: { plasticSaved: 0, co2Saved: 0 } })
+  @Prop({ type: Object, default: { plasticSaved: 0, co2Saved: 0, totalReturns: 0 } })
   impact: {
     plasticSaved: number;
     co2Saved: number;
+    totalReturns: number;
   };
 
-  @Prop({ default: null })
+  @Prop({ default: null, select: false })
   refreshToken: string;
 
   @Prop({ default: null })
@@ -50,3 +51,12 @@ export class User extends Document {
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+UserSchema.set('toJSON', {
+  transform(_doc, ret: Record<string, any>) {
+    delete ret.passwordHash;
+    delete ret.refreshToken;
+    delete ret.__v;
+    return ret;
+  },
+});

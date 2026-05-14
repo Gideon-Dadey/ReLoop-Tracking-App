@@ -11,6 +11,8 @@ import { BlockchainModule } from './modules/blockchain/blockchain.module';
 import { SyncModule } from './modules/sync/sync.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { CommunityModule } from './modules/community/community.module';
+import { CampaignsModule } from './modules/campaigns/campaigns.module';
+import { SurveysModule } from './modules/surveys/surveys.module';
 
 
 @Module({
@@ -36,6 +38,8 @@ import { CommunityModule } from './modules/community/community.module';
     SyncModule,
     NotificationsModule,
     CommunityModule,
+    CampaignsModule,
+    SurveysModule,
   ],
   controllers: [],
   providers: [],
