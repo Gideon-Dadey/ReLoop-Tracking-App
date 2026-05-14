@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Platform, ScrollView, Image, KeyboardAvoidingView } from 'react-native';
 import { ButtonLoader } from '@/components/Skeleton';
+import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '@/src/store/useAuthStore';
-import { useThemeColors } from '@/src/store/useThemeStore';
+import { useThemeColors, useThemeStore } from '@/src/store/useThemeStore';
 import { apiService } from '@/src/api/service';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { router } from 'expo-router';
@@ -19,6 +20,7 @@ export default function RegisterScreen() {
   const [showConfirm, setShowConfirm] = useState(false);
   const { setAuth } = useAuthStore();
   const c = useThemeColors();
+  const mode = useThemeStore((s) => s.mode);
 
   const handleRegister = async () => {
     if (!userName || !email || !password) {
@@ -52,6 +54,7 @@ export default function RegisterScreen() {
       style={{ flex: 1, backgroundColor: c.bg }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
     <ScrollView
       ref={scrollViewRef}
       style={[styles.container, { backgroundColor: c.bg }]}

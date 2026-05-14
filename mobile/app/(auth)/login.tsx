@@ -5,8 +5,9 @@ import {
 } from 'react-native';
 import { ButtonLoader } from '@/components/Skeleton';
 import * as SecureStore from 'expo-secure-store';
+import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '@/src/store/useAuthStore';
-import { useThemeColors } from '@/src/store/useThemeStore';
+import { useThemeColors, useThemeStore } from '@/src/store/useThemeStore';
 import { apiService } from '@/src/api/service';
 import { Check, Eye, EyeOff } from 'lucide-react-native';
 import { router } from 'expo-router';
@@ -22,6 +23,7 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const { setAuth } = useAuthStore();
   const c = useThemeColors();
+  const mode = useThemeStore((s) => s.mode);
 
   useEffect(() => {
     (async () => {
@@ -78,6 +80,7 @@ export default function LoginScreen() {
       style={[styles.container, { backgroundColor: c.bg }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
       <View style={styles.header}>
         <Image source={require('../../assets/reloop.png')} style={styles.logoImage} />
         <Text style={[styles.subtitle, { color: c.textMuted, marginTop: 0 }]}>Circular Economy Platform</Text>

@@ -91,7 +91,7 @@ function RootLayoutNav() {
         <Stack.Screen name="(auth)/register" />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
-      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} translucent backgroundColor="transparent" />
+      <StatusBar style="auto" />
       {/* Auth redirects */}
       {!user && !inAuthGroup && <Redirect href="/(auth)/login" />}
       {user && inAuthGroup && <Redirect href="/(tabs)" />}

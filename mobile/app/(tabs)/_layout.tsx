@@ -1,7 +1,7 @@
 import React from 'react';
 import { Platform, View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Tabs } from 'expo-router';
-import { LayoutGrid, Layers, ScanLine, FlaskConical, UserRound } from 'lucide-react-native';
+import { LayoutGrid, Layers, ScanLine, Microscope, UserRound } from 'lucide-react-native';
 import { useThemeColors } from '@/src/store/useThemeStore';
 
 const ScanIcon = ({ color, size }: { color: string; size: number }) => (
@@ -82,7 +82,7 @@ export default function TabLayout() {
         options={{
           title: 'Research',
           tabBarIcon: ({ color, focused }) => (
-            <FlaskConical color={color} size={22} strokeWidth={focused ? 2.2 : 1.4} />
+            <Microscope color={color} size={22} strokeWidth={focused ? 2.2 : 1.4} />
           ),
         }}
       />
