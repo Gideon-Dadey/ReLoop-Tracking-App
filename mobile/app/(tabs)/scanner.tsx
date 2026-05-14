@@ -78,10 +78,15 @@ export default function ScannerScreen() {
       const userEmail = user?.email || '';
       const result = await apiService.returnContainer(activeBarcode!, userEmail);
       
-      // Immediate state synchronization
       if (result.user) {
         updateUser(result.user);
       }
+
+      // Optimistic cache update for instant home screen refresh
+      queryClient.setQueryData(['user-stats'], (old: any) => {
+        if (!old) return result.user;
+        return { ...old, ...result.user };
+      });
       
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -95,7 +100,11 @@ export default function ScannerScreen() {
       });
 
       Alert.alert('Success! 🎉', `Container verified as clean.\n+${result.impact?.points || 10} points earned!`);
+
       queryClient.invalidateQueries({ queryKey: ['user-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['transaction-history'] });
+      queryClient.invalidateQueries({ queryKey: ['active-borrows'] });
+      queryClient.invalidateQueries({ queryKey: ['coach-recommendations'] });
       resetScanner();
     } catch (error: any) {
       if (Platform.OS !== 'web') {

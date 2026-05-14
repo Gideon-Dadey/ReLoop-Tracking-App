@@ -8,10 +8,19 @@ import { Platform } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/src/store/useAuthStore';
 import { useSyncEngine } from '@/src/hooks/useSyncEngine';
+import { useAppFocusRefresh } from '@/src/hooks/useAppFocusRefresh';
 import { useThemeStore, useThemeColors } from '@/src/store/useThemeStore';
 import * as NavigationBar from 'expo-navigation-bar';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+      retry: 2,
+    },
+  },
+});
 
 if (Platform.OS === 'android') {
   NavigationBar.setBackgroundColorAsync('#0A0F1A');
@@ -60,6 +69,7 @@ import { StatusBar } from 'expo-status-bar';
 function RootLayoutNav() {
   const { user } = useAuthStore();
   const { queueCount } = useSyncEngine();
+  useAppFocusRefresh();
   const mode = useThemeStore((s) => s.mode);
   const c = useThemeColors();
   const segments = useSegments();

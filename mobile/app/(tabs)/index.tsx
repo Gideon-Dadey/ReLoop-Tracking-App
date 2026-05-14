@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, Platform, TouchableOpacity,
-  Animated, useWindowDimensions, Image, StatusBar,
+  Animated, useWindowDimensions, Image,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '@/src/store/useAuthStore';
 import { useSyncEngine } from '@/src/hooks/useSyncEngine';
@@ -24,7 +25,7 @@ import * as Haptics from 'expo-haptics';
 
 const RADIUS = 14;
 const PADDING = 16;
-const HERO_BG = '#0F3A32';
+const HERO_BG = '#0C1F1B';
 
 export default function Dashboard() {
   const { user, accessToken, logout } = useAuthStore();
@@ -47,21 +48,23 @@ export default function Dashboard() {
     queryFn: () => apiService.getProfile(),
     initialData: user,
     enabled: !!accessToken,
-    staleTime: 30_000,
+    staleTime: 5_000,
+    refetchOnMount: 'always' as const,
   });
 
   const { data: coachTips = [] } = useQuery<CoachTip[]>({
     queryKey: ['coach-recommendations'],
     queryFn: () => apiService.getCoachRecommendations(),
     enabled: !!accessToken,
-    staleTime: 60_000,
+    staleTime: 30_000,
   });
 
   const { data: recentActivity = [] } = useQuery<Transaction[]>({
     queryKey: ['transaction-history'],
     queryFn: () => apiService.getTransactionHistory(),
     enabled: !!accessToken,
-    staleTime: 30_000,
+    staleTime: 5_000,
+    refetchOnMount: 'always' as const,
   });
 
   const displayUser = userData || user;
@@ -125,7 +128,7 @@ export default function Dashboard() {
 
   return (
     <View style={[styles.container, { backgroundColor: HERO_BG }]}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar style="light" />
       <ScrollView
         style={[styles.scrollView, { backgroundColor: HERO_BG }]}
         contentContainerStyle={styles.scrollContent}
@@ -133,38 +136,36 @@ export default function Dashboard() {
       >
         {/* Hero Section */}
         <LinearGradient
-          colors={[HERO_BG, '#062B26']}
+          colors={[HERO_BG, '#091A17', '#071512']}
           style={{ paddingBottom: 44, paddingHorizontal: PADDING, overflow: 'hidden' }}
         >
-          <View pointerEvents="none" style={styles.heroOverlay} />
-
           <View style={styles.header}>
             <View style={styles.headerRow}>
               <View>
-                <Text style={[styles.date, { color: 'rgba(255,255,255,0.6)' }]}>
+                <Text style={styles.date}>
                   {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase()}
                 </Text>
-                <Text style={[styles.greeting, { color: '#fff' }]}>
-                  Hi, {(userData?.userName || 'there').split(' ')[0].toUpperCase()}
+                <Text style={styles.greeting}>
+                  Hi, {(userData?.userName || 'there').split(' ')[0]}
                 </Text>
               </View>
               <View style={styles.headerActions}>
                 <TouchableOpacity
                   onPress={openNotifications}
-                  style={styles.iconBtn}
+                  style={[styles.iconBtn, { backgroundColor: 'rgba(255,255,255,0.08)' }]}
                   accessibilityLabel="Notifications"
                   accessibilityRole="button"
                 >
-                  <Bell color="#fff" size={22} strokeWidth={1.5} />
+                  <Bell color="rgba(255,255,255,0.85)" size={20} strokeWidth={1.8} />
                   {unreadCount > 0 && (
-                    <View style={[styles.badge, { backgroundColor: c.accent }]}>
+                    <View style={[styles.badge, { backgroundColor: '#10B981' }]}>
                       <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
                     </View>
                   )}
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={goToProfile}
-                  style={[styles.avatarBtn, { borderColor: 'rgba(255,255,255,0.3)' }]}
+                  style={[styles.avatarBtn, { borderColor: 'rgba(16,185,129,0.5)' }]}
                   accessibilityLabel="Profile"
                   accessibilityRole="button"
                 >
@@ -176,35 +177,29 @@ export default function Dashboard() {
 
           {/* Impact Hero Card */}
           <View style={styles.mainCardContainer}>
-            <View style={[styles.heroCard, { backgroundColor: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.2)' }]}>
-              <View style={[styles.decorBlob, styles.decorBlob1, { transform: [{ rotate: '15deg' }] }]}>
-                <LinearGradient colors={['#0B7F5C', '#065F46', '#053D34']} style={styles.gradFull} />
-              </View>
-              <View style={[styles.decorBlob, styles.decorBlob3]}>
-                <LinearGradient colors={['#0EA5E9', '#0B5CAD', '#064E3B']} style={styles.gradFull} />
-              </View>
-              <View style={[styles.decorBlob, styles.decorBlob5]} />
-
+            <LinearGradient
+              colors={['rgba(16,185,129,0.12)', 'rgba(16,185,129,0.04)', 'rgba(0,0,0,0)']}
+              style={styles.heroCard}
+            >
               <View style={styles.heroContent}>
-                <View style={styles.scoreContainer}>
-                  <View style={styles.impactScorePill}>
-                    <Leaf color="#A7F3D0" size={14} strokeWidth={2} />
-                    <Text style={styles.impactScorePillText}>Impact</Text>
-                  </View>
-                  <Text style={[styles.heroScoreLarge, { color: '#fff' }]}>{impactScore}</Text>
-                  <Text style={[styles.heroSubTitle, { color: 'rgba(255,255,255,0.9)' }]}>Impact Score</Text>
-                  <Text style={styles.impactScoreMeta}>Based on returns & environmental impact</Text>
+                <View style={styles.impactScorePill}>
+                  <Leaf color="#34D399" size={14} strokeWidth={2.2} />
+                  <Text style={styles.impactScorePillText}>IMPACT SCORE</Text>
                 </View>
+
+                <Text style={styles.heroScoreLarge}>{impactScore}</Text>
+
+                <Text style={styles.impactScoreMeta}>Based on returns & environmental impact</Text>
 
                 <View style={styles.headerBadges}>
                   <StreakBadge count={displayUser?.streakCount || 0} />
-                  <View style={[styles.pointsBadge, { backgroundColor: 'rgba(255,255,255,0.14)', borderColor: 'rgba(255,255,255,0.2)', borderWidth: 1 }]}>
-                    <Star color="#FBBF24" size={14} fill="#FBBF24" />
-                    <Text style={[styles.pointsText, { color: '#fff' }]}>{points} pts</Text>
+                  <View style={styles.pointsBadge}>
+                    <Star color="#FBBF24" size={13} fill="#FBBF24" />
+                    <Text style={styles.pointsText}>{points} pts</Text>
                   </View>
                 </View>
               </View>
-            </View>
+            </LinearGradient>
           </View>
         </LinearGradient>
 
@@ -446,74 +441,56 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: 0 },
-  header: { paddingTop: Platform.OS === 'ios' ? 70 : 60, paddingBottom: 10 },
+  header: { paddingTop: Platform.OS === 'ios' ? 70 : 60, paddingBottom: 16 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  date: { fontSize: 12, fontWeight: '700', letterSpacing: 1.5, marginBottom: 4, opacity: 0.6 },
-  greeting: { fontSize: 34, fontWeight: '800', letterSpacing: -1.2 },
-  headerActions: { flexDirection: 'row', gap: 12 },
+  date: { fontSize: 11, fontWeight: '700', letterSpacing: 1.8, marginBottom: 6, color: 'rgba(255,255,255,0.45)' },
+  greeting: { fontSize: 30, fontWeight: '800', letterSpacing: -0.8, color: '#fff' },
+  headerActions: { flexDirection: 'row', gap: 10 },
   avatarBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    borderWidth: 2, overflow: 'hidden', backgroundColor: '#fff',
+    width: 42, height: 42, borderRadius: 21,
+    borderWidth: 2, overflow: 'hidden', backgroundColor: '#1A2F2A',
   },
   iconBtn: {
-    width: 44, height: 44, borderRadius: 22,
+    width: 42, height: 42, borderRadius: 21,
     justifyContent: 'center', alignItems: 'center', position: 'relative',
   },
   badge: {
-    position: 'absolute', top: 4, right: 4,
+    position: 'absolute', top: 2, right: 2,
     minWidth: 18, height: 18, borderRadius: 9,
     justifyContent: 'center', alignItems: 'center',
-    paddingHorizontal: 4, borderWidth: 2, borderColor: '#fff',
+    paddingHorizontal: 4, borderWidth: 2, borderColor: HERO_BG,
   },
   badgeText: { color: '#fff', fontSize: 9, fontWeight: '900' },
-  headerAvatar: { width: '100%', height: '100%', borderRadius: 22 },
+  headerAvatar: { width: '100%', height: '100%', borderRadius: 21 },
 
-  mainCardContainer: { marginTop: 0 },
+  mainCardContainer: { marginTop: 4 },
   heroCard: {
-    borderRadius: RADIUS, padding: 40, borderWidth: 1.5,
-    overflow: 'hidden', position: 'relative', minHeight: 240,
-    justifyContent: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.12, shadowRadius: 30, elevation: 8,
+    borderRadius: 20, paddingVertical: 36, paddingHorizontal: 24,
+    borderWidth: 1, borderColor: 'rgba(16,185,129,0.15)',
+    overflow: 'hidden',
   },
-  decorBlob: { position: 'absolute', borderRadius: 100, opacity: 0.07 },
-  decorBlob1: { width: 60, height: 60, top: -10, left: '15%' },
-  decorBlob3: { width: 40, height: 40, bottom: -5, left: '30%' },
-  decorBlob5: { width: 6, height: 6, top: '25%', left: '15%', backgroundColor: '#fff', opacity: 0.12 },
-  heroOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.10)' },
-  gradFull: { flex: 1, borderRadius: 100 },
-  heroContent: { alignItems: 'center', marginBottom: 24 },
-  scoreContainer: {
-    alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: 20, paddingVertical: 16, borderRadius: RADIUS,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 }, elevation: 4,
-  },
+  heroContent: { alignItems: 'center' },
   heroScoreLarge: {
-    fontSize: 56, fontWeight: '900', letterSpacing: -1.2, lineHeight: 62,
-    textShadowColor: 'rgba(255, 255, 255, 0.22)',
-    textShadowOffset: { width: 0, height: 6 }, textShadowRadius: 12, marginTop: 10,
+    fontSize: 64, fontWeight: '900', letterSpacing: -2, lineHeight: 72,
+    color: '#fff', marginTop: 12,
   },
-  heroSubTitle: { fontSize: 12, fontWeight: '800', letterSpacing: 0.7, marginTop: 8 },
   impactScorePill: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingVertical: 5, paddingHorizontal: 14, borderRadius: 999,
+    backgroundColor: 'rgba(16,185,129,0.15)',
   },
-  impactScorePillText: { fontSize: 12, fontWeight: '800', letterSpacing: 0.8, color: 'rgba(255,255,255,0.92)' },
+  impactScorePillText: { fontSize: 10, fontWeight: '800', letterSpacing: 1.2, color: '#34D399' },
   impactScoreMeta: {
-    marginTop: 6, fontSize: 12, fontWeight: '600',
-    color: 'rgba(255,255,255,0.88)', textAlign: 'center', maxWidth: 260, lineHeight: 15,
+    marginTop: 8, fontSize: 13, fontWeight: '500',
+    color: 'rgba(255,255,255,0.5)', textAlign: 'center', lineHeight: 18,
   },
-  headerBadges: { flexDirection: 'row', gap: 8, alignItems: 'center', marginTop: 8 },
+  headerBadges: { flexDirection: 'row', gap: 8, alignItems: 'center', marginTop: 20 },
   pointsBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingVertical: 4, paddingHorizontal: 12, borderRadius: 20,
+    paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
   },
-  pointsText: { fontSize: 13, fontWeight: '700' },
+  pointsText: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.9)' },
 
   statsGrid: { flexDirection: 'row', gap: 12, marginTop: 16, paddingHorizontal: PADDING },
   gridItem: { flex: 1, borderRadius: RADIUS, padding: 20, borderWidth: 1, alignItems: 'center' },

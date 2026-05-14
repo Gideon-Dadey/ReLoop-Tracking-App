@@ -42,11 +42,15 @@ export default function HistoryScreen() {
   const { data: activeBorrows = [], isFetching: isFetchingActive, isLoading: isLoadingActive, refetch: refetchActive } = useQuery({
     queryKey: ['active-borrows'],
     queryFn: () => apiService.getActiveBorrows(),
+    staleTime: 5_000,
+    refetchOnMount: 'always' as const,
   });
 
   const { data: history = [], isFetching: isFetchingHistory, isLoading: isLoadingHistory, refetch: refetchHistory } = useQuery({
     queryKey: ['transaction-history'],
     queryFn: () => apiService.getTransactionHistory(),
+    staleTime: 5_000,
+    refetchOnMount: 'always' as const,
   });
 
   const onRefresh = () => {

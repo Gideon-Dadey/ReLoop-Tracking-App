@@ -3,7 +3,7 @@ import { useSyncStore } from '../store/useSyncStore';
 import { apiClient } from '../api/client';
 import { useQueryClient } from '@tanstack/react-query';
 
-const SYNC_INTERVAL_MS = 10_000;
+const SYNC_INTERVAL_MS = 5_000;
 
 export const useSyncEngine = () => {
   const { queue, removeFromQueue } = useSyncStore();
@@ -32,6 +32,8 @@ export const useSyncEngine = () => {
         }
       });
       queryClient.invalidateQueries({ queryKey: ['user-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['transaction-history'] });
+      queryClient.invalidateQueries({ queryKey: ['active-borrows'] });
     } catch (error) {
       console.error('Sync error:', error);
     } finally {
