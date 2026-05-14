@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User } from '../users/schemas/user.schema';
+import { User, UserRole } from '../users/schemas/user.schema';
 
 @Injectable()
 export class CommunityService {
@@ -36,7 +36,7 @@ export class CommunityService {
 
   async getLeaderboard(limit = 10) {
     return this.userModel
-      .find({ role: 'user' })
+      .find({ role: UserRole.USER })
       .select('userName avatar impact points')
       .sort({ points: -1 })
       .limit(limit)
