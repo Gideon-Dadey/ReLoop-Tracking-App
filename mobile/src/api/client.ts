@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/useAuthStore';
 
 const API_URL =
   Constants.expoConfig?.extra?.apiUrl ??
-  (process.env.EXPO_PUBLIC_API_URL || 'https://reloop-tracking-app.onrender.com');
+  (process.env.EXPO_PUBLIC_API_URL || 'http://192.168.0.32:3000');
 
 export const apiClient = axios.create({
   baseURL: API_URL,
