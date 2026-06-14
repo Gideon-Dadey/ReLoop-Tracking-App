@@ -4,6 +4,7 @@ import { ButtonLoader } from '@/components/Skeleton';
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '@/src/store/useAuthStore';
 import { useThemeColors, useThemeStore } from '@/src/store/useThemeStore';
+import { screenHeader } from '@/src/theme/screenHeader';
 import { apiService } from '@/src/api/service';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { router } from 'expo-router';
@@ -64,8 +65,8 @@ export default function RegisterScreen() {
     >
       <View style={styles.header}>
         <Image source={require('../../assets/reloop.png')} style={styles.logoImage} />
-        <Text style={[styles.title, { color: c.text }]}>Create Account</Text>
-        <Text style={[styles.subtitle, { color: c.textMuted }]}>
+        <Text style={[screenHeader.authTitle, { color: c.text }]}>Create Account</Text>
+        <Text style={[screenHeader.subtitle, { color: c.textMuted, marginTop: 6 }]}>
           Join the circular economy movement
         </Text>
       </View>
@@ -166,8 +167,6 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 24, paddingTop: Platform.OS === 'ios' ? 60 : 48, paddingBottom: 40 },
   header: { alignItems: 'center', paddingBottom: 24, paddingTop: 16 },
   logoImage: { width: 80, height: 80, marginBottom: 16, borderRadius: 20 },
-  title: { fontSize: 28, fontWeight: '800', marginTop: 8, letterSpacing: -0.8 },
-  subtitle: { fontSize: 14, marginTop: 6, fontWeight: '500' },
   form: { width: '100%', maxWidth: 400, alignSelf: 'center' },
   label: { fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 18, letterSpacing: 0.2 },
   input: {

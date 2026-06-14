@@ -5,8 +5,8 @@ import { ApiProperty } from '@nestjs/swagger';
 class SurveyAnswerDto {
   @IsNumber()
   @Min(1)
-  @Max(10)
-  @ApiProperty({ example: 1 })
+  @Max(999)
+  @ApiProperty({ example: 1, description: 'Research survey: 1–10. Daily pulse: 101–121.' })
   questionId: number;
 
   @IsNumber()

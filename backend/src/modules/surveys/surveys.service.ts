@@ -70,6 +70,15 @@ export class SurveysService {
       };
     });
 
+    if (version.startsWith('pulse-')) {
+      const avg = questionResults[0]?.avgScore ?? 0;
+      return {
+        totalRespondents,
+        questions: questionResults,
+        avgScore: avg,
+      };
+    }
+
     const sectionAAvg = questionResults
       .filter((q) => q.questionId <= 5)
       .reduce((sum, q) => sum + q.avgScore, 0) / 5 || 0;
@@ -85,6 +94,51 @@ export class SurveysService {
         behavioralIntentions: +sectionAAvg.toFixed(2),
         communityResilience: +sectionBAvg.toFixed(2),
       },
+    };
+  }
+
+  /** Daily pulse — one question per calendar day (version key: pulse-YYYY-MM-DD). */
+  async getPulseStatus(userId: string, dateKey?: string) {
+    const todayKey = dateKey ?? new Date().toISOString().slice(0, 10);
+    const todayVersion = `pulse-${todayKey}`;
+    const existing = await this.surveyModel.findOne({
+      userId: new Types.ObjectId(userId),
+      surveyVersion: todayVersion,
+    });
+
+    const pulses = await this.surveyModel
+      .find({
+        userId: new Types.ObjectId(userId),
+        surveyVersion: { $regex: /^pulse-/ },
+      })
+      .select('surveyVersion')
+      .lean();
+
+    const completedDates = new Set(
+      pulses.map((p) => p.surveyVersion.replace('pulse-', '')),
+    );
+
+    const completedToday = completedDates.has(todayKey);
+
+    let streak = 0;
+    const cursor = new Date(`${todayKey}T12:00:00.000Z`);
+
+    if (!completedToday) {
+      cursor.setUTCDate(cursor.getUTCDate() - 1);
+    }
+
+    while (completedDates.has(cursor.toISOString().slice(0, 10))) {
+      streak++;
+      cursor.setUTCDate(cursor.getUTCDate() - 1);
+    }
+
+    return {
+      completedToday: !!existing,
+      todayVersion,
+      streak,
+      totalCompleted: pulses.length,
+      completedAt: existing?.completedAt ?? null,
+      todayKey,
     };
   }
 }

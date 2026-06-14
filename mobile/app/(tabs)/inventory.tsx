@@ -11,6 +11,8 @@ import {
   ArrowLeft, ArrowRight, ClipboardList, Info
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import PinnedScreenHeader from '@/components/PinnedScreenHeader';
+import { screenHeader } from '@/src/theme/screenHeader';
 
 const RADIUS = 14;
 const PADDING = 16;
@@ -151,20 +153,18 @@ export default function HistoryScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>
-      
-      {/* Dynamic Header */}
-      <View style={styles.header}>
-         <View>
-            <Text style={[styles.title, { color: c.text }]}>Activity</Text>
-         </View>
-         <TouchableOpacity 
-           style={[styles.notifCircle, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}
-         >
+      <PinnedScreenHeader
+        title="Activity"
+        right={
+          <TouchableOpacity
+            style={[styles.notifCircle, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}
+          >
             <Search color={c.text} size={20} />
-         </TouchableOpacity>
-      </View>
+          </TouchableOpacity>
+        }
+      />
 
-      {/* Segmented Control - Industrial Standard */}
+      {/* Segmented Control - stays pinned while list scrolls */}
       <View style={styles.segmentContainer}>
          <View style={[styles.segmentBg, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
             <TouchableOpacity 
@@ -196,7 +196,7 @@ export default function HistoryScreen() {
             ListEmptyComponent={
               <View style={styles.emptyState}>
                  <Package color={c.textFaint} size={64} strokeWidth={1} />
-                 <Text style={[styles.emptyTitle, { color: c.text }]}>Nothing borrowed yet</Text>
+                 <Text style={[screenHeader.emptyTitle, { color: c.text }]}>Nothing borrowed yet</Text>
                  <Text style={[styles.emptyMsg, { color: c.textMuted }]}>Scan a container at any partner location to start tracking your inventory.</Text>
               </View>
             }
@@ -212,7 +212,7 @@ export default function HistoryScreen() {
             ListEmptyComponent={
               <View style={styles.emptyState}>
                  <HistoryIcon color={c.textFaint} size={64} strokeWidth={1} />
-                 <Text style={[styles.emptyTitle, { color: c.text }]}>No transactions found</Text>
+                 <Text style={[screenHeader.emptyTitle, { color: c.text }]}>No transactions found</Text>
               </View>
             }
           />
@@ -224,15 +224,6 @@ export default function HistoryScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    paddingTop: Platform.OS === 'ios' ? 70 : 60,
-    paddingHorizontal: PADDING,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  title: { fontSize: 32, fontWeight: '800', letterSpacing: -1 },
   notifCircle: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
 
   segmentContainer: { paddingHorizontal: PADDING, marginBottom: 20 },
@@ -319,6 +310,6 @@ const styles = StyleSheet.create({
   barcodeStrip: { width: 1.5, borderRadius: 0.5 },
 
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 100, paddingHorizontal: 20 },
-  emptyTitle: { fontSize: 20, fontWeight: '800', marginTop: 24, marginBottom: 12 },
+  emptyTitle: { marginTop: 24, marginBottom: 12 },
   emptyMsg: { fontSize: 15, textAlign: 'center', lineHeight: 22, opacity: 0.7 },
 });

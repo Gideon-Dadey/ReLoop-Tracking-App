@@ -8,22 +8,21 @@ import { useAuthStore } from '@/src/store/useAuthStore';
 import { useThemeColors, useThemeStore } from '@/src/store/useThemeStore';
 import { apiService } from '@/src/api/service';
 import {
-  LogOut, User as UserIcon, Mail, Building, Edit2, Check, X,
-  Camera, Trash2, Key, Sun, Moon, ChevronRight, ShieldCheck,
-  Settings, Bell, Heart, HelpCircle, Star, Leaf, Info, Package,
-  MapPin,
+  LogOut, Edit2, Check, X,
+  Camera, Key, Sun, Moon, ChevronRight, ShieldCheck,
+  Bell, Heart, HelpCircle, Star, Leaf, Info, Package, ArrowLeft,
 } from 'lucide-react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import RewardsSection from '@/components/RewardsSection';
 import { useRouter } from 'expo-router';
+import PinnedScreenHeader from '@/components/PinnedScreenHeader';
 import { useNotificationPreferencesStore } from '@/src/store/useNotificationPreferences';
 import * as ImagePicker from 'expo-image-picker';
 import type { LucideIcon } from 'lucide-react-native';
-import { Skeleton, ButtonLoader } from '@/components/Skeleton';
+import { ButtonLoader } from '@/components/Skeleton';
+import { screenHeader } from '@/src/theme/screenHeader';
 
 const RADIUS = 14;
-
-// ── Extracted & Memoized ProfileMenuItem ────────────────────────────────────
 
 interface MenuItemProps {
   icon: LucideIcon;
@@ -59,8 +58,6 @@ const ProfileMenuItem = memo(function ProfileMenuItem({
     </TouchableOpacity>
   );
 });
-
-// ── ProfileScreen ───────────────────────────────────────────────────────────
 
 export default function ProfileScreen() {
   const { user, updateUser, logout } = useAuthStore();
@@ -144,13 +141,6 @@ export default function ProfileScreen() {
     }
   };
 
-  const cycleAvatar = () => {
-    const seeds = ['Felix', 'Aneka', 'Tigger', 'Max', 'Luna', 'Lucky', 'Casper', 'Midnight'];
-    const randomSeed = seeds[Math.floor(Math.random() * seeds.length)];
-    const newAvatar = `https://api.dicebear.com/7.x/bottts-neutral/png?seed=${randomSeed}&backgroundColor=b1e3f3,c0aede,d1d4f9`;
-    handleUpdateProfile({ avatar: newAvatar });
-  };
-
   const handleShare = async () => {
     try {
       await Share.share({
@@ -173,7 +163,7 @@ export default function ProfileScreen() {
   const showAbout = () => {
     Alert.alert(
       'About ReLoop',
-      `Version 1.2.0 (Stable)\n\nReLoop is on a mission to eliminate single-use plastic through a circular economy of smart containers. Thank you for being part of the solution!`,
+      'Version 1.2.0 (Stable)\n\nReLoop is on a mission to eliminate single-use plastic through a circular economy of smart containers. Thank you for being part of the solution!',
       [{ text: 'Close' }],
     );
   };
@@ -186,14 +176,20 @@ export default function ProfileScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={[styles.title, { color: c.text }]}>Settings</Text>
-            <Text style={[styles.subtitle, { color: c.textFaint }]}>Manage your account & impact</Text>
-          </View>
+      <PinnedScreenHeader
+        left={
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={[styles.backBtn, { backgroundColor: c.surfaceBorder + '33' }]}
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+          >
+            <ArrowLeft color={c.text} size={22} />
+          </TouchableOpacity>
+        }
+        title="Settings"
+        subtitle="Manage your account & impact"
+        right={
           <TouchableOpacity
             onPress={toggleTheme}
             style={[styles.themeBtn, { backgroundColor: c.surfaceBorder + '33' }]}
@@ -202,9 +198,9 @@ export default function ProfileScreen() {
           >
             {mode === 'dark' ? <Sun color={c.text} size={20} /> : <Moon color={c.text} size={20} />}
           </TouchableOpacity>
-        </View>
-
-        {/* Hero Card */}
+        }
+      />
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={[styles.heroCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
           <View style={styles.heroMain}>
             <TouchableOpacity onPress={pickImage} style={styles.avatarContainer} activeOpacity={0.8} accessibilityLabel="Change profile picture" accessibilityRole="button">
@@ -264,7 +260,6 @@ export default function ProfileScreen() {
 
         <RewardsSection />
 
-        {/* Account */}
         <View style={styles.sectionMargin}>
           <Text style={[styles.groupLabel, { color: c.textFaint }]}>ACCOUNT</Text>
           <View style={styles.groupCard}>
@@ -287,25 +282,12 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Support */}
         <View style={styles.sectionMargin}>
           <Text style={[styles.groupLabel, { color: c.textFaint }]}>SUPPORT & SOCIAL</Text>
           <View style={styles.groupCard}>
             <ProfileMenuItem icon={Heart} label="Tell a Friend" color="#EC4899" onPress={handleShare} surfaceColor={c.surface} borderColor={c.surfaceBorder} textColor={c.text} faintColor={c.textFaint} />
             <ProfileMenuItem icon={HelpCircle} label="Help Center" color="#6366F1" onPress={showHelp} surfaceColor={c.surface} borderColor={c.surfaceBorder} textColor={c.text} faintColor={c.textFaint} />
             <ProfileMenuItem icon={Info} label="About ReLoop" color="#6B7280" onPress={showAbout} surfaceColor={c.surface} borderColor={c.surfaceBorder} textColor={c.text} faintColor={c.textFaint} />
-          </View>
-        </View>
-
-        {/* Navigation */}
-        <View style={styles.sectionMargin}>
-          <Text style={[styles.groupLabel, { color: c.textFaint }]}>NAVIGATION</Text>
-          <View style={styles.groupCard}>
-            <ProfileMenuItem
-              icon={MapPin} label="Nearby Drop-off Points" color="#3B82F6"
-              onPress={() => router.push('/map' as any)}
-              surfaceColor={c.surface} borderColor={c.surfaceBorder} textColor={c.text} faintColor={c.textFaint}
-            />
           </View>
         </View>
 
@@ -323,7 +305,6 @@ export default function ProfileScreen() {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Password Modal with keyboard avoidance */}
       <Modal visible={passModalVisible} animationType="fade" transparent>
         <KeyboardAvoidingView
           style={styles.modalOverlay}
@@ -331,7 +312,7 @@ export default function ProfileScreen() {
         >
           <View style={[styles.modalContent, { backgroundColor: c.surface }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: c.text }]}>Update Password</Text>
+              <Text style={[screenHeader.modalTitle, { color: c.text }]}>Update Password</Text>
               <TouchableOpacity onPress={() => setPassModalVisible(false)} style={styles.modalClose} accessibilityLabel="Close" accessibilityRole="button">
                 <X color={c.text} size={24} />
               </TouchableOpacity>
@@ -392,13 +373,8 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { paddingHorizontal: 16 },
-  header: {
-    paddingTop: Platform.OS === 'ios' ? 70 : 60, paddingBottom: 24,
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-  },
-  title: { fontSize: 34, fontWeight: '800', letterSpacing: -1 },
-  subtitle: { fontSize: 14, marginTop: 2 },
+  scrollContent: { paddingHorizontal: 16, paddingBottom: 40 },
+  backBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
   themeBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
 
   heroCard: {
@@ -457,7 +433,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2, shadowRadius: 20, elevation: 8,
   },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  modalTitle: { fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },
   modalClose: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   modalBody: { gap: 16 },
   modalSub: { fontSize: 14, lineHeight: 20, marginBottom: 24 },

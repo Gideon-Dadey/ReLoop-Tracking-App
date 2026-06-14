@@ -36,4 +36,11 @@ export class SurveysController {
   async getResults(@Query('version') version?: string) {
     return this.surveysService.getResults(version || '1.0');
   }
+
+  @Get('pulse/status')
+  @ApiOperation({ summary: 'Daily pulse completion status and streak' })
+  @ApiQuery({ name: 'date', required: false, type: String, description: 'Local calendar date YYYY-MM-DD' })
+  async getPulseStatus(@Req() req, @Query('date') date?: string) {
+    return this.surveysService.getPulseStatus(req.user.id, date);
+  }
 }

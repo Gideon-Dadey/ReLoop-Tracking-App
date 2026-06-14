@@ -9,14 +9,15 @@ import { TrendingUp, Award, Globe } from 'lucide-react-native';
 import { useThemeColors } from '@/src/store/useThemeStore';
 import { apiService, CampaignPlatform } from '@/src/api/service';
 import { Skeleton } from '@/components/Skeleton';
+import { PlatformIcon, PLATFORM_META } from '@/components/PlatformIcon';
 
 const RADIUS = 14;
 
 const PLATFORM_COLORS: Record<CampaignPlatform, string> = {
-  instagram: '#F56040',
-  tiktok: '#69C9D0',
-  facebook: '#4599FF',
-  pinterest: '#FF4757',
+  instagram: PLATFORM_META.instagram.color,
+  tiktok: PLATFORM_META.tiktok.color,
+  facebook: PLATFORM_META.facebook.color,
+  pinterest: PLATFORM_META.pinterest.color,
 };
 
 export default function CampaignDashboard() {
@@ -125,11 +126,13 @@ export default function CampaignDashboard() {
               )}
             />
             <View style={styles.legendContainer}>
-              {pieData.map((p) => (
-                <View key={p.text} style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: p.color }]} />
-                  <Text style={[styles.legendText, { color: c.textSecondary }]}>{p.text}</Text>
-                  <Text style={[styles.legendCount, { color: c.text }]}>{p.value}</Text>
+              {stats.platformDistribution.map((p) => (
+                <View key={p.platform} style={styles.legendItem}>
+                  <PlatformIcon platform={p.platform} size={16} />
+                  <Text style={[styles.legendText, { color: c.textSecondary }]}>
+                    {PLATFORM_META[p.platform].label}
+                  </Text>
+                  <Text style={[styles.legendCount, { color: c.text }]}>{p.count}</Text>
                 </View>
               ))}
             </View>
@@ -148,9 +151,12 @@ export default function CampaignDashboard() {
               </View>
               <View style={styles.topContent}>
                 <Text style={[styles.topTitle, { color: c.text }]} numberOfLines={1}>{cp.title}</Text>
-                <Text style={[styles.topPlatform, { color: c.textMuted }]}>
-                  {cp.platform.charAt(0).toUpperCase() + cp.platform.slice(1)}
-                </Text>
+                <View style={styles.topPlatformRow}>
+                  <PlatformIcon platform={cp.platform as CampaignPlatform} size={12} />
+                  <Text style={[styles.topPlatform, { color: c.textMuted }]}>
+                    {PLATFORM_META[cp.platform as CampaignPlatform]?.label ?? cp.platform}
+                  </Text>
+                </View>
               </View>
               <Text style={[styles.topScore, { color: c.accent }]}>{cp.scores.overallScore.toFixed(1)}</Text>
             </View>
@@ -188,8 +194,7 @@ const styles = StyleSheet.create({
   pieCenterValue: { fontSize: 24, fontWeight: '800' },
   pieCenterLabel: { fontSize: 11, marginTop: 2 },
   legendContainer: { gap: 10 },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  legendDot: { width: 12, height: 12, borderRadius: 6 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   legendText: { fontSize: 13, flex: 1 },
   legendCount: { fontSize: 15, fontWeight: '700', minWidth: 24, textAlign: 'right' },
   topItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
@@ -197,7 +202,8 @@ const styles = StyleSheet.create({
   rankText: { fontSize: 13, fontWeight: '700' },
   topContent: { flex: 1, marginLeft: 12 },
   topTitle: { fontSize: 14, fontWeight: '600' },
-  topPlatform: { fontSize: 12, marginTop: 2 },
+  topPlatformRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
+  topPlatform: { fontSize: 12 },
   topScore: { fontSize: 16, fontWeight: '700' },
   alignmentContainer: { gap: 12 },
   alignmentBg: { height: 12, borderRadius: 6, overflow: 'hidden' },

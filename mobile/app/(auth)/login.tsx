@@ -8,6 +8,7 @@ import * as SecureStore from 'expo-secure-store';
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '@/src/store/useAuthStore';
 import { useThemeColors, useThemeStore } from '@/src/store/useThemeStore';
+import { screenHeader } from '@/src/theme/screenHeader';
 import { apiService } from '@/src/api/service';
 import { Check, Eye, EyeOff } from 'lucide-react-native';
 import { router } from 'expo-router';
@@ -83,7 +84,7 @@ export default function LoginScreen() {
       <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
       <View style={styles.header}>
         <Image source={require('../../assets/reloop.png')} style={styles.logoImage} />
-        <Text style={[styles.subtitle, { color: c.textMuted, marginTop: 0 }]}>Circular Economy Platform</Text>
+        <Text style={[screenHeader.subtitle, { color: c.textMuted, marginTop: 0 }]}>Circular Economy Platform</Text>
       </View>
 
       <View style={styles.form}>
@@ -189,8 +190,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 24, justifyContent: 'center' },
   header: { alignItems: 'center', marginTop: 20, marginBottom: 32 },
   logoImage: { width: 100, height: 100, marginBottom: 16, borderRadius: 24 },
-  title: { fontSize: 34, fontWeight: '800', marginTop: 4, letterSpacing: -1 },
-  subtitle: { fontSize: 14, marginTop: 4, fontWeight: '500' },
   form: { width: '100%', maxWidth: 400, alignSelf: 'center', marginBottom: 20 },
   label: { fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 18, letterSpacing: 0.2 },
   input: {

@@ -7,6 +7,7 @@ import {
   PackageCheck, HelpCircle, Award
 } from 'lucide-react-native';
 import { useRouter, Stack } from 'expo-router';
+import PinnedScreenHeader from '@/components/PinnedScreenHeader';
 
 const { width } = Dimensions.get('window');
 const RADIUS = 10;
@@ -35,18 +36,17 @@ export default function GuideScreen() {
     <View style={[styles.container, { backgroundColor: c.bg }]}>
       <Stack.Screen options={{ headerShown: false }} />
       
-      {/* Dynamic Header */}
-      <View style={styles.header}>
-         <TouchableOpacity 
-           onPress={() => router.back()}
-           style={[styles.backBtn, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}
-         >
+      <PinnedScreenHeader
+        left={
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={[styles.backBtn, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}
+          >
             <ArrowLeft color={c.text} size={22} />
-         </TouchableOpacity>
-         <View>
-            <Text style={[styles.title, { color: c.text }]}>How to Return</Text>
-         </View>
-      </View>
+          </TouchableOpacity>
+        }
+        title="How to Return"
+      />
 
       <ScrollView 
         showsVerticalScrollIndicator={false}
@@ -125,13 +125,6 @@ export default function GuideScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    paddingTop: Platform.OS === 'ios' ? 70 : 60,
-    paddingHorizontal: PADDING,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
   backBtn: {
      width: 44,
      height: 44,
@@ -139,12 +132,8 @@ const styles = StyleSheet.create({
      borderWidth: 1,
      justifyContent: 'center',
      alignItems: 'center',
-     marginRight: 16,
   },
-  headerTitleContainer: { flex: 1 },
   subTitle: { fontSize: 11, fontWeight: '800', letterSpacing: 1.5, marginBottom: 4 },
-  title: { fontSize: 32, fontWeight: '800', letterSpacing: -1 },
-
   scrollContent: { paddingHorizontal: PADDING, paddingBottom: 100 },
 
   heroCard: {

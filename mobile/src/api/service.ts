@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import { formatLocalDateKey } from '@/src/data/dailyPulseQuestions';
 
 // ── API Response Types ──────────────────────────────────────────────────────
 
@@ -177,8 +178,6 @@ export interface EvaluateCampaignPayload {
   evaluatorNotes?: string;
 }
 
-// ── Survey Types ──────────────────────────────────────────────────────────
-
 export interface SurveyAnswer {
   questionId: number;
   value: number;
@@ -204,10 +203,20 @@ export interface SurveyQuestionResult {
 export interface SurveyResults {
   totalRespondents: number;
   questions: SurveyQuestionResult[];
-  sectionAverages: {
+  sectionAverages?: {
     behavioralIntentions: number;
     communityResilience: number;
   };
+  avgScore?: number;
+}
+
+export interface PulseStatus {
+  completedToday: boolean;
+  todayVersion: string;
+  todayKey: string;
+  streak: number;
+  totalCompleted: number;
+  completedAt: string | null;
 }
 
 export interface VerifyResult {
@@ -500,6 +509,16 @@ export const apiService = {
       return data;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Failed to fetch survey results');
+    }
+  },
+
+  getPulseStatus: async (dateKey?: string): Promise<PulseStatus> => {
+    try {
+      const date = dateKey ?? formatLocalDateKey();
+      const { data } = await apiClient.get(`/surveys/pulse/status?date=${date}`);
+      return data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch pulse status');
     }
   },
 };

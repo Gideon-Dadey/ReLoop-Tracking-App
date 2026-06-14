@@ -6,8 +6,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { ExternalLink, CheckCircle, Star } from 'lucide-react-native';
 import { useThemeColors } from '@/src/store/useThemeStore';
-import { apiService, EvaluateCampaignPayload } from '@/src/api/service';
+import { apiService, EvaluateCampaignPayload, CampaignPlatform } from '@/src/api/service';
 import { Skeleton } from '@/components/Skeleton';
+import { PlatformBadge, PLATFORM_META } from '@/components/PlatformIcon';
 
 const RADIUS = 14;
 
@@ -89,10 +90,15 @@ export default function CampaignDetailScreen() {
       <Stack.Screen options={{ title: campaign.title }} />
 
       <View style={[styles.section, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-        <Text style={[styles.title, { color: c.text }]}>{campaign.title}</Text>
-        <Text style={[styles.platform, { color: c.textSecondary }]}>
-          {campaign.platform.charAt(0).toUpperCase() + campaign.platform.slice(1)} · Submitted {new Date(campaign.createdAt).toLocaleDateString()}
-        </Text>
+        <View style={styles.titleRow}>
+          <PlatformBadge platform={campaign.platform as CampaignPlatform} size="lg" />
+          <View style={styles.titleBlock}>
+            <Text style={[styles.title, { color: c.text }]}>{campaign.title}</Text>
+            <Text style={[styles.platform, { color: PLATFORM_META[campaign.platform as CampaignPlatform]?.color ?? c.textSecondary }]}>
+              {PLATFORM_META[campaign.platform as CampaignPlatform]?.label ?? campaign.platform} · Submitted {new Date(campaign.createdAt).toLocaleDateString()}
+            </Text>
+          </View>
+        </View>
         {campaign.description ? (
           <Text style={[styles.description, { color: c.textSecondary }]}>{campaign.description}</Text>
         ) : null}
@@ -190,8 +196,10 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 40 },
   section: { borderRadius: RADIUS, borderWidth: 1, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, marginBottom: 10 },
+  titleBlock: { flex: 1 },
   title: { fontSize: 20, fontWeight: '700', marginBottom: 4 },
-  platform: { fontSize: 13, marginBottom: 10 },
+  platform: { fontSize: 13, fontWeight: '500' },
   description: { fontSize: 14, lineHeight: 20, marginBottom: 12 },
   linkBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, paddingHorizontal: 14, borderWidth: 1, borderRadius: RADIUS, alignSelf: 'flex-start' },
   linkText: { fontSize: 14, fontWeight: '600' },

@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View, Modal, TouchableOpacity, ScrollView, Platform, Dimensions } from 'react-native';
 import { useNotificationStore, Notification } from '../src/store/useNotificationStore';
 import { useThemeColors } from '../src/store/useThemeStore';
+import { screenHeader } from '@/src/theme/screenHeader';
 import { Bell, X, CheckCheck, Info, CheckCircle, AlertTriangle, AlertCircle, Inbox } from 'lucide-react-native';
 
 const { height } = Dimensions.get('window');
@@ -36,7 +37,7 @@ export default function NotificationCenter({ visible, onClose }: NotificationCen
           {/* Header */}
           <View style={[styles.header, { borderBottomColor: c.surfaceBorder }]}>
             <View style={styles.headerLeft}>
-              <Text style={[styles.title, { color: c.text }]}>Notifications</Text>
+              <Text style={[screenHeader.modalTitle, { color: c.text }]}>Notifications</Text>
               {notifications.some(n => !n.isRead) && (
                 <TouchableOpacity onPress={markAllAsRead}>
                    <Text style={[styles.markAll, { color: c.accent }]}>Mark all as read</Text>
@@ -120,11 +121,6 @@ const styles = StyleSheet.create({
   },
   headerLeft: {
     flex: 1,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: -0.5,
   },
   markAll: {
     fontSize: 13,

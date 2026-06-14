@@ -1,34 +1,24 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, Modal, TextInput,
   StyleSheet, RefreshControl, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { router, Stack } from 'expo-router';
-import { Plus, X } from 'lucide-react-native';
-import { FontAwesome5 } from '@expo/vector-icons';
+import { Plus, X, Link2, Sparkles, Share2, CheckCircle2 } from 'lucide-react-native';
 import { useThemeColors } from '@/src/store/useThemeStore';
 import { apiService, Campaign, CampaignPlatform } from '@/src/api/service';
 import { Skeleton } from '@/components/Skeleton';
+import {
+  PlatformBadge,
+  PlatformPicker,
+  PLATFORM_META,
+  urlMatchesPlatform,
+} from '@/components/PlatformIcon';
 
 const RADIUS = 14;
 
-const PLATFORM_ICON_NAMES: Record<CampaignPlatform, string> = {
-  instagram: 'instagram',
-  tiktok: 'tiktok',
-  facebook: 'facebook-f',
-  pinterest: 'pinterest-p',
-};
-
-const PLATFORM_COLORS: Record<CampaignPlatform, string> = {
-  instagram: '#F56040',
-  tiktok: '#69C9D0',
-  facebook: '#4599FF',
-  pinterest: '#FF4757',
-};
-
 function ScoreRing({ score, size = 40 }: { score: number; size?: number }) {
-  const c = useThemeColors();
   const pct = (score / 5) * 100;
   const color = pct >= 80 ? '#10B981' : pct >= 60 ? '#F59E0B' : pct >= 40 ? '#F97316' : '#EF4444';
   return (
@@ -40,8 +30,7 @@ function ScoreRing({ score, size = 40 }: { score: number; size?: number }) {
 
 function CampaignCard({ item }: { item: Campaign }) {
   const c = useThemeColors();
-  const iconName = PLATFORM_ICON_NAMES[item.platform] || 'globe';
-  const platformColor = PLATFORM_COLORS[item.platform] || c.accent;
+  const meta = PLATFORM_META[item.platform];
 
   return (
     <TouchableOpacity
@@ -50,13 +39,11 @@ function CampaignCard({ item }: { item: Campaign }) {
       activeOpacity={0.7}
     >
       <View style={styles.cardRow}>
-        <View style={[styles.platformBadge, { backgroundColor: platformColor + '22' }]}>
-          <FontAwesome5 name={iconName} size={18} color={platformColor} />
-        </View>
+        <PlatformBadge platform={item.platform} />
         <View style={styles.cardContent}>
           <Text style={[styles.cardTitle, { color: c.text }]} numberOfLines={2}>{item.title}</Text>
           <Text style={[styles.cardMeta, { color: c.textSecondary }]}>
-            {item.platform.charAt(0).toUpperCase() + item.platform.slice(1)} · {new Date(item.createdAt).toLocaleDateString()}
+            {meta.label} · {new Date(item.createdAt).toLocaleDateString()}
           </Text>
         </View>
         {item.isEvaluated && <ScoreRing score={item.scores.overallScore} />}
@@ -90,7 +77,9 @@ export default function CampaignsScreen() {
     },
   });
 
-  const platforms: CampaignPlatform[] = ['instagram', 'tiktok', 'facebook', 'pinterest'];
+  const platformMeta = PLATFORM_META[form.platform];
+  const urlValid = useMemo(() => urlMatchesPlatform(form.url, form.platform), [form.url, form.platform]);
+  const canSubmit = form.title.trim().length > 0 && form.url.trim().length > 0;
 
   if (isLoading) {
     return (
@@ -117,7 +106,11 @@ export default function CampaignsScreen() {
         refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} tintColor={c.accent} />}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={[styles.emptyText, { color: c.textSecondary }]}>No campaigns yet. Submit the first one!</Text>
+            <Sparkles size={40} color={c.accent} strokeWidth={1.5} />
+            <Text style={[styles.emptyTitle, { color: c.text }]}>No campaigns yet</Text>
+            <Text style={[styles.emptyText, { color: c.textSecondary }]}>
+              Submit a zero-waste campaign from Instagram, TikTok, Facebook, or Pinterest for the community to evaluate.
+            </Text>
           </View>
         }
       />
@@ -141,59 +134,96 @@ export default function CampaignsScreen() {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={[styles.tipBanner, { backgroundColor: c.accent + '12', borderColor: c.accent + '30' }]}>
+                <Text style={[styles.tipText, { color: c.textSecondary }]}>
+                  Share campaigns about reusables, zero waste, or circular economy — then invite others to evaluate them.
+                </Text>
+              </View>
+
+              <Text style={[styles.label, { color: c.textSecondary }]}>Platform</Text>
+              <PlatformPicker
+                value={form.platform}
+                onChange={(platform) => setForm((f) => ({ ...f, platform }))}
+                mutedColor={c.textMuted}
+                borderColor={c.surfaceBorder}
+              />
+
               <Text style={[styles.label, { color: c.textSecondary }]}>Title</Text>
               <TextInput
                 style={[styles.input, { backgroundColor: c.inputBg, color: c.text, borderColor: c.surfaceBorder }]}
                 value={form.title}
                 onChangeText={(v) => setForm((f) => ({ ...f, title: v }))}
-                placeholder="Campaign title"
+                placeholder="e.g. #ReuseRevolution brand campaign"
                 placeholderTextColor={c.textMuted}
                 maxLength={200}
               />
+              <Text style={[styles.charCount, { color: c.textMuted }]}>{form.title.length}/200</Text>
 
-              <Text style={[styles.label, { color: c.textSecondary }]}>Platform</Text>
-              <View style={styles.platformRow}>
-                {platforms.map((p) => {
-                  const active = form.platform === p;
-                  return (
-                    <TouchableOpacity
-                      key={p}
-                      style={[styles.platformChip, active && { backgroundColor: PLATFORM_COLORS[p] + '22', borderColor: PLATFORM_COLORS[p] }, { borderColor: c.surfaceBorder }]}
-                      onPress={() => setForm((f) => ({ ...f, platform: p }))}
-                    >
-                      <FontAwesome5 name={PLATFORM_ICON_NAMES[p]} size={16} color={active ? PLATFORM_COLORS[p] : c.textMuted} />
-                    </TouchableOpacity>
-                  );
-                })}
+              <Text style={[styles.label, { color: c.textSecondary }]}>Campaign URL</Text>
+              <View style={styles.urlInputWrap}>
+                <Link2 size={16} color={c.textMuted} style={styles.urlIcon} />
+                <TextInput
+                  style={[
+                    styles.input,
+                    styles.urlInput,
+                    {
+                      backgroundColor: c.inputBg,
+                      color: c.text,
+                      borderColor: urlValid ? platformMeta.color + '80' : c.surfaceBorder,
+                    },
+                  ]}
+                  value={form.url}
+                  onChangeText={(v) => setForm((f) => ({ ...f, url: v }))}
+                  placeholder={platformMeta.urlHint}
+                  placeholderTextColor={c.textMuted}
+                  autoCapitalize="none"
+                  keyboardType="url"
+                  autoCorrect={false}
+                />
+                {urlValid && (
+                  <CheckCircle2 size={18} color={platformMeta.color} style={styles.urlCheck} />
+                )}
               </View>
-
-              <Text style={[styles.label, { color: c.textSecondary }]}>URL</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: c.inputBg, color: c.text, borderColor: c.surfaceBorder }]}
-                value={form.url}
-                onChangeText={(v) => setForm((f) => ({ ...f, url: v }))}
-                placeholder="https://..."
-                placeholderTextColor={c.textMuted}
-                autoCapitalize="none"
-                keyboardType="url"
-              />
+              <Text style={[styles.urlHint, { color: c.textMuted }]}>
+                Paste the public link to the post on {platformMeta.label}
+              </Text>
 
               <Text style={[styles.label, { color: c.textSecondary }]}>Description (optional)</Text>
               <TextInput
                 style={[styles.input, styles.multiline, { backgroundColor: c.inputBg, color: c.text, borderColor: c.surfaceBorder }]}
                 value={form.description}
                 onChangeText={(v) => setForm((f) => ({ ...f, description: v }))}
-                placeholder="Brief description..."
+                placeholder="What makes this campaign stand out? Key message, audience, or impact…"
                 placeholderTextColor={c.textMuted}
                 multiline
                 maxLength={1000}
               />
 
+              {(form.title.trim() || form.url.trim()) && (
+                <View style={[styles.previewCard, { backgroundColor: c.inputBg, borderColor: c.surfaceBorder }]}>
+                  <Text style={[styles.previewLabel, { color: c.textMuted }]}>PREVIEW</Text>
+                  <View style={styles.previewRow}>
+                    <PlatformBadge platform={form.platform} size="sm" />
+                    <View style={styles.previewContent}>
+                      <Text style={[styles.previewTitle, { color: c.text }]} numberOfLines={2}>
+                        {form.title.trim() || 'Campaign title'}
+                      </Text>
+                      <Text style={[styles.previewMeta, { color: platformMeta.color }]}>
+                        {platformMeta.label}
+                        {form.url.trim() ? ` · ${form.url.replace(/^https?:\/\//, '').slice(0, 28)}…` : ''}
+                      </Text>
+                    </View>
+                    <Share2 size={16} color={c.textMuted} />
+                  </View>
+                </View>
+              )}
+
               <TouchableOpacity
-                style={[styles.submitBtn, { backgroundColor: c.accent, opacity: createMutation.isPending ? 0.7 : 1 }]}
+                style={[styles.submitBtn, { backgroundColor: c.accent, opacity: createMutation.isPending || !canSubmit ? 0.7 : 1 }]}
                 onPress={() => createMutation.mutate(form)}
-                disabled={!form.title || !form.url || createMutation.isPending}
+                disabled={!canSubmit || createMutation.isPending}
               >
+                <Share2 size={18} color="#FFFFFF" />
                 <Text style={styles.submitText}>{createMutation.isPending ? 'Submitting...' : 'Submit Campaign'}</Text>
               </TouchableOpacity>
 
@@ -213,7 +243,6 @@ const styles = StyleSheet.create({
   list: { padding: 16, paddingBottom: 100 },
   card: { borderRadius: RADIUS, borderWidth: 1, marginBottom: 12, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
   cardRow: { flexDirection: 'row', alignItems: 'center' },
-  platformBadge: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   cardContent: { flex: 1, marginLeft: 12, marginRight: 8 },
   cardTitle: { fontSize: 14, fontWeight: '600', marginBottom: 2 },
   cardMeta: { fontSize: 11 },
@@ -221,19 +250,32 @@ const styles = StyleSheet.create({
   scoreText: { fontWeight: '700' },
   pendingBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   pendingText: { fontSize: 11, fontWeight: '600' },
-  empty: { alignItems: 'center', paddingTop: 60 },
-  emptyText: { fontSize: 15 },
+  empty: { alignItems: 'center', paddingTop: 48, paddingHorizontal: 32, gap: 10 },
+  emptyTitle: { fontSize: 17, fontWeight: '600' },
+  emptyText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
   fab: { position: 'absolute', bottom: 24, right: 24, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4 },
   modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
-  modalContent: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, maxHeight: '85%' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalContent: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, maxHeight: '90%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   modalTitle: { fontSize: 18, fontWeight: '700' },
-  label: { fontSize: 13, fontWeight: '500', marginBottom: 6, marginTop: 14 },
+  tipBanner: { padding: 12, borderRadius: 12, borderWidth: 1, marginBottom: 4 },
+  tipText: { fontSize: 13, lineHeight: 18 },
+  label: { fontSize: 13, fontWeight: '500', marginBottom: 8, marginTop: 14 },
   input: { borderWidth: 1, borderRadius: RADIUS, padding: 14, fontSize: 15 },
-  multiline: { minHeight: 80, textAlignVertical: 'top' },
-  platformRow: { flexDirection: 'row', gap: 10 },
-  platformChip: { width: 44, height: 44, borderRadius: 12, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  submitBtn: { marginTop: 24, padding: 16, borderRadius: RADIUS, alignItems: 'center' },
+  multiline: { minHeight: 88, textAlignVertical: 'top' },
+  charCount: { fontSize: 11, textAlign: 'right', marginTop: 4 },
+  urlInputWrap: { position: 'relative' },
+  urlIcon: { position: 'absolute', left: 14, top: 16, zIndex: 1 },
+  urlInput: { paddingLeft: 40, paddingRight: 40 },
+  urlCheck: { position: 'absolute', right: 14, top: 15 },
+  urlHint: { fontSize: 11, marginTop: 6 },
+  previewCard: { marginTop: 16, borderRadius: RADIUS, borderWidth: 1, padding: 14 },
+  previewLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 10 },
+  previewRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  previewContent: { flex: 1 },
+  previewTitle: { fontSize: 14, fontWeight: '600', marginBottom: 2 },
+  previewMeta: { fontSize: 11, fontWeight: '500' },
+  submitBtn: { marginTop: 24, padding: 16, borderRadius: RADIUS, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 },
   submitText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
   errorText: { color: '#EF4444', fontSize: 13, textAlign: 'center', marginTop: 10 },
 });

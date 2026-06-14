@@ -8,6 +8,8 @@ import {
   Users, Leaf, TrendingUp, Globe, ArrowLeft, Trophy,
 } from 'lucide-react-native';
 import { useRouter, Stack } from 'expo-router';
+import PinnedScreenHeader from '@/components/PinnedScreenHeader';
+import { screenHeader } from '@/src/theme/screenHeader';
 
 const RADIUS = 14;
 const PADDING = 16;
@@ -108,18 +110,17 @@ export default function CommunityScreen() {
     <View style={[styles.container, { backgroundColor: c.bg }]}>
       <Stack.Screen options={{ headerShown: false }} />
       
-      {/* Premium Header */}
-      <View style={styles.topHeader}>
-         <TouchableOpacity 
-           onPress={() => router.back()}
-           style={[styles.backBtn, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}
-         >
+      <PinnedScreenHeader
+        left={
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={[styles.backBtn, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}
+          >
             <ArrowLeft color={c.text} size={22} />
-         </TouchableOpacity>
-         <View style={styles.headerTitleContainer}>
-            <Text style={[styles.title, { color: c.text }]}>Eco Network</Text>
-         </View>
-      </View>
+          </TouchableOpacity>
+        }
+        title="Eco Network"
+      />
 
       <FlatList
         data={leaderboard}
@@ -133,7 +134,7 @@ export default function CommunityScreen() {
           isRefreshing ? null : (
             <View style={styles.emptyState}>
                <Users color={c.textFaint} size={64} strokeWidth={1} />
-               <Text style={[styles.emptyTitle, { color: c.text }]}>No warriors yet</Text>
+               <Text style={[screenHeader.emptyTitle, { color: c.text }]}>No warriors yet</Text>
                <Text style={[styles.emptyMsg, { color: c.textMuted }]}>Invite your friends and be the first Eco-Warrior in your city!</Text>
             </View>
           )
@@ -145,13 +146,6 @@ export default function CommunityScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  topHeader: {
-    paddingTop: Platform.OS === 'ios' ? 70 : 60,
-    paddingHorizontal: PADDING,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
   backBtn: {
      width: 44,
      height: 44,
@@ -159,11 +153,7 @@ const styles = StyleSheet.create({
      borderWidth: 1,
      justifyContent: 'center',
      alignItems: 'center',
-     marginRight: 16,
   },
-  headerTitleContainer: { flex: 1 },
-  title: { fontSize: 32, fontWeight: '800', letterSpacing: -1 },
-
   communityHeader: { paddingHorizontal: PADDING, marginBottom: 24, marginTop: 10 },
   statsGrid: { flexDirection: 'row', gap: PADDING, marginBottom: 32 },
   statItem: { 
@@ -212,6 +202,6 @@ const styles = StyleSheet.create({
   pointsLabel: { fontSize: 10, fontWeight: '800' },
 
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 60, paddingHorizontal: 40 },
-  emptyTitle: { fontSize: 20, fontWeight: '800', marginTop: 24, marginBottom: 12 },
+  emptyTitle: { marginTop: 24, marginBottom: 12 },
   emptyMsg: { fontSize: 15, textAlign: 'center', lineHeight: 22, opacity: 0.7 },
 });

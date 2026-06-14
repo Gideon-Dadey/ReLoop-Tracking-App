@@ -4,6 +4,7 @@ import { Skeleton, ButtonLoader } from './Skeleton';
 import { Gift, Star, QrCode, CheckCircle, X, ChevronRight } from 'lucide-react-native';
 import { useAuthStore } from '../src/store/useAuthStore';
 import { useThemeColors } from '../src/store/useThemeStore';
+import { screenHeader } from '@/src/theme/screenHeader';
 import { apiService } from '../src/api/service';
 import type { Reward } from '../src/api/service';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -123,7 +124,7 @@ export default function RewardsSection() {
                    <View style={[styles.modalIconHuge, { backgroundColor: c.accent + '15' }]}>
                       <Gift color={c.accent} size={48} />
                    </View>
-                   <Text style={[styles.modalTitle, { color: c.text }]}>{selectedReward?.title}</Text>
+                   <Text style={[screenHeader.modalTitle, { color: c.text, textAlign: 'center' }]}>{selectedReward?.title}</Text>
                    <Text style={[styles.modalVendor, { color: c.textMuted }]}>Offered by {selectedReward?.vendor}</Text>
                    
                    <View style={[styles.costBox, { backgroundColor: c.bg, borderColor: c.surfaceBorder }]}>
@@ -153,7 +154,7 @@ export default function RewardsSection() {
               {redemptionStep === 'success' && (
                 <View style={styles.successView}>
                    <CheckCircle color="#10B981" size={64} style={{ marginBottom: 20 }} />
-                   <Text style={[styles.modalTitle, { color: c.text }]}>Reward Redeemed!</Text>
+                   <Text style={[screenHeader.modalTitle, { color: c.text, textAlign: 'center' }]}>Reward Redeemed!</Text>
                    <Text style={[styles.successInstructions, { color: c.textMuted }]}>
                       Show this code to the vendor at checkout.
                    </Text>
@@ -217,7 +218,6 @@ const styles = StyleSheet.create({
   closeBtn: { alignSelf: 'flex-end', width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   confirmView: { alignItems: 'center' },
   modalIconHuge: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
-  modalTitle: { fontSize: 24, fontWeight: '800', textAlign: 'center' },
   modalVendor: { fontSize: 15, marginTop: 6, opacity: 0.8 },
   costBox: { width: '100%', padding: 16, borderRadius: RADIUS, borderWidth: 1, marginTop: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   costLabel: { fontSize: 11, fontWeight: '800' },

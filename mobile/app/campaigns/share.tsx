@@ -7,18 +7,19 @@ import { useQuery } from '@tanstack/react-query';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { Share2, Leaf, Recycle, Flame, Download } from 'lucide-react-native';
-import { useThemeColors } from '@/src/store/useThemeStore';
+import { useThemeColors, colors } from '@/src/store/useThemeStore';
 import { useAuthStore } from '@/src/store/useAuthStore';
-import { apiService } from '@/src/api/service';
+import { apiService, CampaignPlatform } from '@/src/api/service';
 import { Skeleton } from '@/components/Skeleton';
+import { PlatformIcon, PLATFORM_META } from '@/components/PlatformIcon';
 
 const RADIUS = 14;
 
 type CardTheme = 'dark' | 'light' | 'green';
 
 const CARD_THEMES: Record<CardTheme, { bg: string; text: string; accent: string; secondary: string }> = {
-  dark: { bg: '#0F172A', text: '#F1F5F9', accent: '#10B981', secondary: '#94A3B8' },
-  light: { bg: '#FFFFFF', text: '#0F172A', accent: '#059669', secondary: '#64748B' },
+  dark: { bg: colors.dark.surface, text: colors.dark.text, accent: colors.dark.accent, secondary: colors.dark.textMuted },
+  light: { bg: colors.light.surface, text: colors.light.text, accent: colors.light.accent, secondary: colors.light.textMuted },
   green: { bg: '#064E3B', text: '#ECFDF5', accent: '#34D399', secondary: '#A7F3D0' },
 };
 
@@ -69,9 +70,15 @@ function CampaignHighlightCard({ theme, campaign }: { theme: CardTheme; campaign
       </View>
 
       <Text style={[styles.cardHeading, { color: t.text }]}>{campaign.title}</Text>
-      <Text style={[styles.cardName, { color: t.secondary }]}>
-        Score: {campaign.scores?.overallScore?.toFixed(1) || '—'} / 5
-      </Text>
+      <View style={styles.campaignPlatformRow}>
+        {campaign.platform && (
+          <PlatformIcon platform={campaign.platform as CampaignPlatform} size={14} />
+        )}
+        <Text style={[styles.cardName, { color: t.secondary, marginBottom: 0 }]}>
+          {campaign.platform ? `${PLATFORM_META[campaign.platform as CampaignPlatform]?.label ?? campaign.platform} · ` : ''}
+          Score: {campaign.scores?.overallScore?.toFixed(1) || '—'} / 5
+        </Text>
+      </View>
 
       <View style={[styles.cardFooter, { borderTopColor: t.secondary + '30' }]}>
         <Text style={[styles.footerText, { color: t.secondary }]}>Zero Waste · Circular Economy · SDG 12</Text>
@@ -198,6 +205,7 @@ const styles = StyleSheet.create({
   cardBrand: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
   brandText: { fontSize: 13, fontWeight: '700' },
   cardHeading: { fontSize: 18, fontWeight: '700', marginBottom: 4 },
+  campaignPlatformRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 18 },
   cardName: { fontSize: 13, marginBottom: 18 },
   cardStats: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 18 },
   cardStatItem: { alignItems: 'center', gap: 4, flex: 1 },

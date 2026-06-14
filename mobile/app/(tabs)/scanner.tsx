@@ -5,6 +5,7 @@ import { Camera, CameraView } from 'expo-camera';
 import { useSyncStore } from '@/src/store/useSyncStore';
 import { useAuthStore } from '@/src/store/useAuthStore';
 import { useThemeColors } from '@/src/store/useThemeStore';
+import { screenHeader } from '@/src/theme/screenHeader';
 import { useNotificationStore } from '@/src/store/useNotificationStore';
 import { apiService } from '@/src/api/service';
 import { ScanLine, RotateCcw, HelpCircle, CheckCircle2, AlertCircle, Camera as CameraIcon, ArrowRight } from 'lucide-react-native';
@@ -215,7 +216,7 @@ export default function ScannerScreen() {
       {step === 'SCAN' && (
         <View style={styles.overlay} pointerEvents="none">
           <View style={styles.topBar}>
-            <Text style={styles.topTitle}>Scan Container</Text>
+            <Text style={[screenHeader.title, styles.topTitle]}>Scan Container</Text>
             <Text style={styles.topSub}>Point at a ReLoop QR code</Text>
           </View>
 
@@ -246,7 +247,7 @@ const styles = StyleSheet.create({
 
   overlay: { flex: 1, justifyContent: 'space-between', alignItems: 'center' },
   topBar: { paddingTop: Platform.OS === 'ios' ? 70 : 50, alignItems: 'center' },
-  topTitle: { color: '#fff', fontSize: 22, fontWeight: '800' },
+  topTitle: { color: '#fff' },
   topSub: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 4 },
 
   scanFrame: { width: 240, height: 240, position: 'relative' },

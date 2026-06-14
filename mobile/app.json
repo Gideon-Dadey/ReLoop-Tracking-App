@@ -24,8 +24,9 @@
         "monochromeImage": "./assets/reloop.png"
       },
       "predictiveBackGestureEnabled": false,
+      "edgeToEdgeEnabled": true,
       "navigationBar": {
-        "backgroundColor": "#0A0F1A"
+        "backgroundColor": "#000000"
       }
     },
     "web": {
@@ -35,7 +36,8 @@
     },
     "plugins": [
       "expo-router",
-      "expo-navigation-bar"
+      "expo-navigation-bar",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
