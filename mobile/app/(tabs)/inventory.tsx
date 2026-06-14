@@ -13,6 +13,8 @@ import {
 import { useRouter } from 'expo-router';
 import PinnedScreenHeader from '@/components/PinnedScreenHeader';
 import { screenHeader } from '@/src/theme/screenHeader';
+import { useAuthStore } from '@/src/store/useAuthStore';
+import { queryKeys } from '@/src/lib/queryKeys';
 
 const RADIUS = 14;
 const PADDING = 16;
@@ -39,18 +41,21 @@ const BarcodeGraphic = ({ color, opacity = 0.5 }: { color: string, opacity?: num
 export default function HistoryScreen() {
   const c = useThemeColors();
   const router = useRouter();
+  const userId = useAuthStore((s) => s.user?.id);
   const [activeSegment, setActiveSegment] = useState<'borrows' | 'history'>('borrows');
 
   const { data: activeBorrows = [], isFetching: isFetchingActive, isLoading: isLoadingActive, refetch: refetchActive } = useQuery({
-    queryKey: ['active-borrows'],
+    queryKey: queryKeys.activeBorrows(userId ?? ''),
     queryFn: () => apiService.getActiveBorrows(),
+    enabled: !!userId,
     staleTime: 5_000,
     refetchOnMount: 'always' as const,
   });
 
   const { data: history = [], isFetching: isFetchingHistory, isLoading: isLoadingHistory, refetch: refetchHistory } = useQuery({
-    queryKey: ['transaction-history'],
+    queryKey: queryKeys.transactionHistory(userId ?? ''),
     queryFn: () => apiService.getTransactionHistory(),
+    enabled: !!userId,
     staleTime: 5_000,
     refetchOnMount: 'always' as const,
   });

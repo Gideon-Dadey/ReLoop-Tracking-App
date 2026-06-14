@@ -1,12 +1,15 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useSyncStore } from '../store/useSyncStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { apiClient } from '../api/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/src/lib/queryKeys';
 
 const SYNC_INTERVAL_MS = 5_000;
 
 export const useSyncEngine = () => {
   const { queue, removeFromQueue } = useSyncStore();
+  const userId = useAuthStore((s) => s.user?.id);
   const queryClient = useQueryClient();
 
   const queueRef = useRef(queue);
@@ -31,15 +34,17 @@ export const useSyncEngine = () => {
           if (item) removeFromQueue(item.id);
         }
       });
-      queryClient.invalidateQueries({ queryKey: ['user-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['transaction-history'] });
-      queryClient.invalidateQueries({ queryKey: ['active-borrows'] });
+      if (userId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.userStats(userId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.transactionHistory(userId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.activeBorrows(userId) });
+      }
     } catch (error) {
       console.error('Sync error:', error);
     } finally {
       isSyncingRef.current = false;
     }
-  }, [removeFromQueue, queryClient]);
+  }, [removeFromQueue, queryClient, userId]);
 
   useEffect(() => {
     const timer = setInterval(processSync, SYNC_INTERVAL_MS);

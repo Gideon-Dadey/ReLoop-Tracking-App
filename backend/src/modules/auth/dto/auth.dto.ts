@@ -50,8 +50,8 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   @MaxLength(500_000)
-  @ApiPropertyOptional()
-  avatar?: string;
+  @ApiPropertyOptional({ nullable: true })
+  avatar?: string | null;
 }
 
 export class ChangePasswordDto {

@@ -46,9 +46,21 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       setAuth: (user, accessToken, refreshToken) => set({ user, accessToken, refreshToken }),
-      updateUser: (updatedUser) => set((state) => ({ 
-        user: state.user ? { ...state.user, ...updatedUser } : null 
-      })),
+      updateUser: (updatedUser) => set((state) => {
+        if (!state.user) return { user: null };
+        return {
+          user: {
+            ...state.user,
+            ...updatedUser,
+            impact: updatedUser.impact
+              ? { ...state.user.impact, ...updatedUser.impact }
+              : state.user.impact,
+            weeklyGoal: updatedUser.weeklyGoal
+              ? { ...state.user.weeklyGoal, ...updatedUser.weeklyGoal }
+              : state.user.weeklyGoal,
+          },
+        };
+      }),
       logout: () => set({ user: null, accessToken: null, refreshToken: null }),
     }),
     {

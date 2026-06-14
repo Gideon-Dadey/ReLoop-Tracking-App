@@ -12,6 +12,7 @@ import { ScanLine, RotateCcw, HelpCircle, CheckCircle2, AlertCircle, Camera as C
 import { useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useNotifications } from '@/src/hooks/useNotifications';
+import { syncAfterContainerReturn } from '@/src/lib/userStats';
 import { useRouter } from 'expo-router';
 
 const RADIUS = 14;
@@ -78,34 +79,29 @@ export default function ScannerScreen() {
 
       const userEmail = user?.email || '';
       const result = await apiService.returnContainer(activeBarcode!, userEmail);
-      
-      if (result.user) {
-        updateUser(result.user);
+
+      const userId = user?.id;
+      if (!userId) {
+        throw new Error('Session expired. Please sign in again.');
       }
 
-      // Optimistic cache update for instant home screen refresh
-      queryClient.setQueryData(['user-stats'], (old: any) => {
-        if (!old) return result.user;
-        return { ...old, ...result.user };
-      });
-      
+      await syncAfterContainerReturn(queryClient, userId, result, updateUser);
+
+      const pointsEarned = result.impact?.points ?? 10;
+
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
-      
-      showLocalNotification('Verified & Returned! ✨', `Earned ${result.impact?.points || 10} points!`);
+
+      showLocalNotification('Verified & Returned! ✨', `Earned ${pointsEarned} points!`);
       addNotification({
         title: 'Verified & Returned! ✨',
-        message: `Success! +${result.impact?.points || 10} points added. AI confirmed it was clean!`,
-        type: 'SUCCESS'
+        message: `Success! +${pointsEarned} points added. AI confirmed it was clean!`,
+        type: 'SUCCESS',
       });
 
-      Alert.alert('Success! 🎉', `Container verified as clean.\n+${result.impact?.points || 10} points earned!`);
+      Alert.alert('Success! 🎉', `Container verified as clean.\n+${pointsEarned} points earned!`);
 
-      queryClient.invalidateQueries({ queryKey: ['user-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['transaction-history'] });
-      queryClient.invalidateQueries({ queryKey: ['active-borrows'] });
-      queryClient.invalidateQueries({ queryKey: ['coach-recommendations'] });
       resetScanner();
     } catch (error: any) {
       if (Platform.OS !== 'web') {

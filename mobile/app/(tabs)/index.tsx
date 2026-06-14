@@ -8,9 +8,11 @@ import { useAuthStore } from '@/src/store/useAuthStore';
 import { useSyncEngine } from '@/src/hooks/useSyncEngine';
 import { useThemeStore, useThemeColors, brand } from '@/src/store/useThemeStore';
 import { screenHeader } from '@/src/theme/screenHeader';
+import { typography } from '@/src/theme/fonts';
 import { apiService } from '@/src/api/service';
 import type { CoachTip, Transaction } from '@/src/api/service';
 import { useQuery } from '@tanstack/react-query';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   Leaf, Wind, Star, ArrowUpRight, ArrowDownLeft,
   MapPin, ChevronRight, Bell, Globe, ArrowRight,
@@ -25,6 +27,7 @@ import HomeSpotlight, { SpotlightItem } from '@/components/HomeSpotlight';
 import StreakBadge from '@/components/StreakBadge';
 import { DashboardSkeleton, ButtonLoader } from '@/components/Skeleton';
 import * as Haptics from 'expo-haptics';
+import { queryKeys } from '@/src/lib/queryKeys';
 
 const RADIUS = 14;
 const PADDING = 16;
@@ -76,31 +79,33 @@ export default function Dashboard() {
     }
   }, []);
 
+  const userId = user?.id;
+
   const { data: userData, isLoading: isLoadingStats, refetch: refetchStats } = useQuery({
-    queryKey: ['user-stats'],
+    queryKey: queryKeys.userStats(userId ?? ''),
     queryFn: () => apiService.getProfile(),
-    initialData: user,
-    enabled: !!accessToken,
-    staleTime: 5_000,
+    enabled: !!accessToken && !!userId,
     refetchOnMount: 'always' as const,
   });
 
   const { data: coachTips = [], refetch: refetchCoach } = useQuery<CoachTip[]>({
-    queryKey: ['coach-recommendations'],
+    queryKey: queryKeys.coachRecommendations(userId ?? ''),
     queryFn: () => apiService.getCoachRecommendations(),
-    enabled: !!accessToken,
+    enabled: !!accessToken && !!userId,
     staleTime: 30_000,
   });
 
   const { data: recentActivity = [], refetch: refetchActivity } = useQuery<Transaction[]>({
-    queryKey: ['transaction-history'],
+    queryKey: queryKeys.transactionHistory(userId ?? ''),
     queryFn: () => apiService.getTransactionHistory(),
-    enabled: !!accessToken,
-    staleTime: 5_000,
+    enabled: !!accessToken && !!userId,
     refetchOnMount: 'always' as const,
   });
 
-  const displayUser = userData || user;
+  const displayUser = useMemo(() => {
+    if (userData && userData.id === userId) return userData;
+    return user;
+  }, [userData, userId, user]);
 
   const plasticSaved = useMemo(
     () => displayUser?.impact?.plasticSaved?.toFixed(2) || '0.00',
@@ -113,10 +118,18 @@ export default function Dashboard() {
   const points = displayUser?.points ?? 0;
 
   useEffect(() => {
-    if (userData) {
+    if (userData && userData.id === userId) {
       useAuthStore.getState().updateUser(userData);
     }
-  }, [userData]);
+  }, [userData, userId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (accessToken && userId) {
+        void refetchStats();
+      }
+    }, [accessToken, userId, refetchStats]),
+  );
 
   const impactScore = useMemo(
     () =>
@@ -380,8 +393,11 @@ export default function Dashboard() {
                 <PlusCircle color={c.accent} size={40} strokeWidth={1.5} />
               </View>
               <Text style={[styles.actionLabel, { color: c.text }]}>BORROW</Text>
-              <Text style={[styles.microTag, { color: c.textFaint }]}>
-                {displayUser?.activeBorrows || 0} active holds
+              <Text style={[styles.actionMeta, { color: c.textMuted }]}>
+                <Text style={[styles.actionMetaValue, { color: c.textSecondary }]}>
+                  {displayUser?.activeBorrows || 0}
+                </Text>
+                {' active holds'}
               </Text>
             </TouchableOpacity>
 
@@ -395,8 +411,11 @@ export default function Dashboard() {
                 <Recycle color={c.accent} size={40} strokeWidth={1.5} />
               </View>
               <Text style={[styles.actionLabel, { color: c.text }]}>RETURN</Text>
-              <Text style={[styles.microTag, { color: c.textFaint }]}>
-                {displayUser?.impact?.totalReturns || 0} total returns
+              <Text style={[styles.actionMeta, { color: c.textMuted }]}>
+                <Text style={[styles.actionMetaValue, { color: c.textSecondary }]}>
+                  {displayUser?.impact?.totalReturns || 0}
+                </Text>
+                {' total returns'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -792,7 +811,18 @@ const styles = StyleSheet.create({
   communitySubtitle: { fontSize: 13, fontWeight: '600' },
 
   globalLoader: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
-  microTag: { color: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: '800', letterSpacing: 0.5, marginTop: 4 },
+  actionMeta: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 6,
+    textAlign: 'center',
+    ...typography.label,
+  },
+  actionMetaValue: {
+    fontSize: 13,
+    lineHeight: 18,
+    ...typography.sectionTitle,
+  },
 
   milestoneCard: {
     borderRadius: RADIUS, borderWidth: 1, padding: 18,

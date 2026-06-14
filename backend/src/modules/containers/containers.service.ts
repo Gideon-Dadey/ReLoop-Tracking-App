@@ -84,14 +84,27 @@ export class ContainersService {
   }
 
   async return(serialNumber: string, userId: string, vendorId: string) {
-    const container = await this.getOrCreateContainer(serialNumber, ContainerStatus.ISSUED, userId);
+    let container = await this.containerModel.findOne({ serialNumber });
 
-    if (container.status !== ContainerStatus.ISSUED) {
-      // If it's already returned, don't error.
-      if (container.status === ContainerStatus.RETURNED || container.status === ContainerStatus.AVAILABLE) {
-        return { message: 'Container already returned', container };
+    if (!container) {
+      container = await this.getOrCreateContainer(serialNumber, ContainerStatus.ISSUED, userId);
+      container.lastVendorId = new Types.ObjectId(vendorId);
+      await container.save();
+    } else if (
+      container.status === ContainerStatus.AVAILABLE ||
+      container.status === ContainerStatus.RETURNED
+    ) {
+      // Self-service flow: assign an available/returned container to this user, then complete return.
+      container.status = ContainerStatus.ISSUED;
+      container.currentUserId = new Types.ObjectId(userId);
+      container.lastVendorId = new Types.ObjectId(vendorId);
+      await container.save();
+    } else if (container.status === ContainerStatus.ISSUED) {
+      if (container.currentUserId?.toString() !== userId) {
+        throw new BadRequestException('Container is currently issued to another user');
       }
-      throw new BadRequestException('Container was not issued');
+    } else {
+      throw new BadRequestException(`Container cannot be returned (status: ${container.status})`);
     }
 
     const user = await this.userModel.findById(userId);
@@ -167,6 +180,9 @@ export class ContainersService {
       streakCount: user.streakCount 
     });
 
+    const weeklyGoal = await this.getWeeklyGoal(userId);
+    const activeBorrows = await this.getActiveBorrows(userId);
+
     return { 
       message: 'Container returned successfully',
       impact: { plasticSaved, co2Saved, points: points + streakBonus, streakBonus, streakCount: user.streakCount },
@@ -179,6 +195,8 @@ export class ContainersService {
         streakCount: user.streakCount,
         impact: user.impact,
         avatar: user.avatar,
+        weeklyGoal,
+        activeBorrows: activeBorrows.length,
       },
     };
   }

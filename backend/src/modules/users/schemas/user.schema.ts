@@ -43,8 +43,8 @@ export class User extends Document {
   @Prop({ default: null, select: false })
   refreshToken: string;
 
-  @Prop({ default: null })
-  avatar: string;
+  @Prop({ type: String, default: null })
+  avatar: string | null;
 
   createdAt: Date;
   updatedAt: Date;

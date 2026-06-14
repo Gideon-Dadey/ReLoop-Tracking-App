@@ -21,6 +21,7 @@ import * as ImagePicker from 'expo-image-picker';
 import type { LucideIcon } from 'lucide-react-native';
 import { ButtonLoader } from '@/components/Skeleton';
 import { screenHeader } from '@/src/theme/screenHeader';
+import { queryKeys } from '@/src/lib/queryKeys';
 
 const RADIUS = 14;
 
@@ -80,13 +81,21 @@ export default function ProfileScreen() {
   const handleUpdateProfile = async (fieldUpdate: { userName?: string; avatar?: string | null }) => {
     setLoading(true);
     try {
-      const updatedUser = await apiService.updateProfile({
-        userName: fieldUpdate.userName,
-        avatar: fieldUpdate.avatar as string,
-      });
-      updateUser({ userName: updatedUser.userName, avatar: updatedUser.avatar });
+      const payload: { userName?: string; avatar?: string | null } = {};
+      if (fieldUpdate.userName !== undefined) payload.userName = fieldUpdate.userName;
+      if ('avatar' in fieldUpdate) payload.avatar = fieldUpdate.avatar;
+
+      const updatedUser = await apiService.updateProfile(payload);
+      const patch: { userName?: string; avatar?: string } = {};
+      if (fieldUpdate.userName !== undefined) patch.userName = updatedUser.userName;
+      if ('avatar' in fieldUpdate) patch.avatar = updatedUser.avatar ?? undefined;
+      updateUser(patch);
+
       if (fieldUpdate.userName) setIsEditing(false);
-      queryClient.invalidateQueries({ queryKey: ['user-stats'] });
+      if ('avatar' in fieldUpdate && !fieldUpdate.avatar) {
+        Alert.alert('Photo removed', 'Your profile photo has been removed.');
+      }
+      queryClient.invalidateQueries({ queryKey: queryKeys.userStats(user.id) });
     } catch (error: any) {
       Alert.alert('Update Failed', error.message || 'Something went wrong');
     } finally {
@@ -139,6 +148,32 @@ export default function ProfileScreen() {
     } catch (error: any) {
       Alert.alert('Image Selection Failed', error.message);
     }
+  };
+
+  const confirmRemoveAvatar = () => {
+    Alert.alert(
+      'Remove profile photo?',
+      'Your photo will be removed and replaced with your initials avatar.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => handleUpdateProfile({ avatar: null }),
+        },
+      ],
+    );
+  };
+
+  const showAvatarOptions = () => {
+    const buttons: { text: string; style?: 'cancel' | 'destructive'; onPress?: () => void }[] = [
+      { text: 'Choose Photo', onPress: pickImage },
+    ];
+    if (user.avatar) {
+      buttons.push({ text: 'Remove Photo', style: 'destructive', onPress: confirmRemoveAvatar });
+    }
+    buttons.push({ text: 'Cancel', style: 'cancel' });
+    Alert.alert('Profile Photo', undefined, buttons);
   };
 
   const handleShare = async () => {
@@ -203,13 +238,26 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={[styles.heroCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
           <View style={styles.heroMain}>
-            <TouchableOpacity onPress={pickImage} style={styles.avatarContainer} activeOpacity={0.8} accessibilityLabel="Change profile picture" accessibilityRole="button">
-              <Image source={{ uri: avatarUrl }} style={styles.avatar} />
-              {loading && <View style={styles.avatarLoader}><ButtonLoader color={c.accent} /></View>}
-              <View style={[styles.editBadge, { backgroundColor: c.accent }]}>
-                <Camera color="#fff" size={12} />
-              </View>
-            </TouchableOpacity>
+            <View style={styles.avatarColumn}>
+              <TouchableOpacity onPress={showAvatarOptions} style={styles.avatarContainer} activeOpacity={0.8} accessibilityLabel="Change profile picture" accessibilityRole="button">
+                <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+                {loading && <View style={styles.avatarLoader}><ButtonLoader color={c.accent} /></View>}
+                <View style={[styles.editBadge, { backgroundColor: c.accent }]}>
+                  <Camera color="#fff" size={12} />
+                </View>
+              </TouchableOpacity>
+              {user.avatar ? (
+                <TouchableOpacity
+                  onPress={confirmRemoveAvatar}
+                  disabled={loading}
+                  style={styles.removePhotoBtn}
+                  accessibilityLabel="Remove profile photo"
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.removePhotoText}>Remove photo</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
 
             <View style={styles.heroInfo}>
               {isEditing ? (
@@ -383,7 +431,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05, shadowRadius: 12, elevation: 4,
   },
   heroMain: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
+  avatarColumn: { alignItems: 'center' },
   avatarContainer: { position: 'relative', width: 84, height: 84 },
+  removePhotoBtn: { marginTop: 8, paddingVertical: 4, paddingHorizontal: 8 },
+  removePhotoText: { color: '#EF4444', fontSize: 12, fontWeight: '700' },
   avatar: { width: '100%', height: '100%', borderRadius: 42 },
   avatarLoader: {
     ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)',

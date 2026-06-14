@@ -5,14 +5,14 @@ import {
   Inter_500Medium,
   Inter_600SemiBold,
   Inter_700Bold,
+  useFonts,
 } from '@expo-google-fonts/inter';
 import { ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
 import { Stack, Redirect, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/src/store/useAuthStore';
 import { useSyncEngine } from '@/src/hooks/useSyncEngine';
@@ -20,16 +20,9 @@ import { useAppFocusRefresh } from '@/src/hooks/useAppFocusRefresh';
 import { useThemeStore, useThemeColors, colors, getNavigationTheme, type ThemeMode } from '@/src/store/useThemeStore';
 import { applyAppFonts } from '@/src/theme/applyAppFonts';
 import * as NavigationBar from 'expo-navigation-bar';
+import { queryClient, clearSessionQueries } from '@/src/lib/queryClient';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: true,
-      refetchOnReconnect: true,
-      retry: 2,
-    },
-  },
-});
+export { queryClient };
 
 if (Platform.OS === 'android') {
   NavigationBar.setBackgroundColorAsync(colors.dark.tabBg);
@@ -44,7 +37,9 @@ export const unstable_settings = {
   initialRouteName: '(auth)/login',
 };
 
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {
+  /* Expo Go / hot reload may not have a registered splash controller yet */
+});
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -61,10 +56,9 @@ export default function RootLayout() {
   }, [error]);
 
   useEffect(() => {
-    if (loaded) {
-      applyAppFonts();
-      SplashScreen.hideAsync();
-    }
+    if (!loaded) return;
+    applyAppFonts();
+    SplashScreen.hideAsync().catch(() => {});
   }, [loaded]);
 
   if (!loaded) {
@@ -96,6 +90,15 @@ function RootLayoutNav() {
   const c = useThemeColors();
   const segments = useSegments();
   const statusBarStyle = getStatusBarStyle(segments, mode);
+  const prevUserIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const nextId = user?.id ?? null;
+    if (prevUserIdRef.current !== nextId) {
+      clearSessionQueries();
+      prevUserIdRef.current = nextId;
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     if (Platform.OS === 'android') {

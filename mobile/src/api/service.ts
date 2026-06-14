@@ -226,7 +226,8 @@ export interface VerifyResult {
 
 export interface ReturnResult {
   user?: Partial<User>;
-  impact?: { points?: number };
+  impact?: { points?: number; plasticSaved?: number; co2Saved?: number; streakBonus?: number; streakCount?: number };
+  message?: string;
 }
 
 // ── API Service ─────────────────────────────────────────────────────────────
@@ -278,7 +279,7 @@ export const apiService = {
 
   updateProfile: async (update: {
     userName?: string;
-    avatar?: string;
+    avatar?: string | null;
   }): Promise<User> => {
     try {
       const { data } = await apiClient.patch('/auth/profile', update);

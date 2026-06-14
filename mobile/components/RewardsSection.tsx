@@ -8,6 +8,7 @@ import { screenHeader } from '@/src/theme/screenHeader';
 import { apiService } from '../src/api/service';
 import type { Reward } from '../src/api/service';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/src/lib/queryKeys';
 
 const RADIUS = 14;
 
@@ -32,7 +33,7 @@ export default function RewardsSection() {
     onSuccess: (data) => {
       setVoucherCode(data.voucherCode || `RELOOP-${Math.random().toString(36).substr(2, 6).toUpperCase()}`);
       setRedemptionStep('success');
-      qc.invalidateQueries({ queryKey: ['user-stats'] });
+      qc.invalidateQueries({ queryKey: queryKeys.userStats(user?.id ?? '') });
       qc.invalidateQueries({ queryKey: ['rewards'] });
     },
     onError: (err: any) => {

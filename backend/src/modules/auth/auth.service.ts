@@ -153,12 +153,12 @@ export class AuthService {
     return this.sanitizeUser(user, { weeklyGoal, activeBorrows: borrows.length });
   }
 
-  async updateProfile(userId: string, update: { userName?: string; avatar?: string }) {
+  async updateProfile(userId: string, update: { userName?: string; avatar?: string | null }) {
     const user = await this.userModel.findById(userId);
     if (!user) throw new NotFoundException('User not found');
 
     if (update.userName) user.userName = update.userName;
-    if (update.avatar !== undefined) user.avatar = update.avatar;
+    if (update.avatar !== undefined) user.avatar = update.avatar || null;
 
     await user.save();
     return this.sanitizeUser(user);
