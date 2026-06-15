@@ -13,6 +13,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { CommunityModule } from './modules/community/community.module';
 import { CampaignsModule } from './modules/campaigns/campaigns.module';
 import { SurveysModule } from './modules/surveys/surveys.module';
+import { ReferralModule } from './modules/referral/referral.module';
 
 
 @Module({
@@ -40,6 +41,7 @@ import { SurveysModule } from './modules/surveys/surveys.module';
     CommunityModule,
     CampaignsModule,
     SurveysModule,
+    ReferralModule,
   ],
   controllers: [],
   providers: [],

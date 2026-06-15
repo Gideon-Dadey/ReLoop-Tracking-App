@@ -22,6 +22,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useNotificationStore } from '@/src/store/useNotificationStore';
 import NotificationCenter from '@/components/NotificationCenter';
+import ProfileDrawer from '@/components/ProfileDrawer';
 import PinnedScreenHeader from '@/components/PinnedScreenHeader';
 import HomeSpotlight, { SpotlightItem } from '@/components/HomeSpotlight';
 import StreakBadge from '@/components/StreakBadge';
@@ -71,6 +72,7 @@ export default function Dashboard() {
 
   const [refreshing, setRefreshing] = useState(false);
   const [notifVisible, setNotifVisible] = useState(false);
+  const [profileDrawerVisible, setProfileDrawerVisible] = useState(false);
   const unreadCount = useNotificationStore((s) => s.unreadCount);
 
   const triggerHaptic = useCallback(() => {
@@ -157,7 +159,8 @@ export default function Dashboard() {
 
   const openNotifications = useCallback(() => setNotifVisible(true), []);
   const closeNotifications = useCallback(() => setNotifVisible(false), []);
-  const goToProfile = useCallback(() => router.push('/profile'), [router]);
+  const openProfileDrawer = useCallback(() => setProfileDrawerVisible(true), []);
+  const closeProfileDrawer = useCallback(() => setProfileDrawerVisible(false), []);
   const goToScanner = useCallback(() => { triggerHaptic(); router.push('/scanner'); }, [triggerHaptic, router]);
   const goToCommunity = useCallback(() => router.push('/community'), [router]);
   const goToGuide = useCallback(() => router.push('/guide'), [router]);
@@ -324,13 +327,13 @@ export default function Dashboard() {
               )}
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={goToProfile}
+              onPress={openProfileDrawer}
               style={[
                 styles.headerActionBtn,
                 styles.avatarBtn,
                 { borderColor: c.accent + '90', backgroundColor: headerActionBg },
               ]}
-              accessibilityLabel="Profile"
+              accessibilityLabel="Open account menu"
               accessibilityRole="button"
               activeOpacity={0.7}
             >
@@ -670,6 +673,16 @@ export default function Dashboard() {
       )}
 
       <NotificationCenter visible={notifVisible} onClose={closeNotifications} />
+
+      <ProfileDrawer
+        visible={profileDrawerVisible}
+        onClose={closeProfileDrawer}
+        impactScore={impactScore}
+        points={points}
+        streakCount={displayUser?.streakCount ?? 0}
+        totalReturns={displayUser?.impact?.totalReturns ?? 0}
+        plasticSaved={parseFloat(plasticSaved) || 0}
+      />
     </View>
   );
 }

@@ -13,8 +13,13 @@ async function bootstrap() {
   app.use(json({ limit: '10mb' }));
   app.use(urlencoded({ extended: true, limit: '10mb' }));
 
-  // Security
-  app.use(helmet());
+  // Security (allow social crawlers to read OG pages & images)
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
   app.enableCors({
     origin: process.env.NODE_ENV === 'production'
       ? (process.env.CORS_ORIGINS || '').split(',')

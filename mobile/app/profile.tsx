@@ -22,6 +22,7 @@ import type { LucideIcon } from 'lucide-react-native';
 import { ButtonLoader } from '@/components/Skeleton';
 import { screenHeader } from '@/src/theme/screenHeader';
 import { queryKeys } from '@/src/lib/queryKeys';
+import { buildReferralUrl, buildInviteMessage } from '@/src/lib/shareLinks';
 
 const RADIUS = 14;
 
@@ -178,10 +179,17 @@ export default function ProfileScreen() {
 
   const handleShare = async () => {
     try {
-      await Share.share({
-        message: `Join ReLoop and start your sustainability journey! Use my link to get a referral bonus: https://reloop.eco/join/${user.userName}`,
-        title: 'Share ReLoop',
-      });
+      const url = buildReferralUrl(user.userName);
+      const message = buildInviteMessage(
+        user.userName,
+        user.points ?? 0,
+        user.impact?.totalReturns ?? 0,
+        user.streakCount ?? 0,
+        url,
+      );
+      await Share.share(
+        Platform.OS === 'ios' ? { url, message } : { message, title: 'Join ReLoop' },
+      );
     } catch (error: any) {
       Alert.alert('Sharing failed', error.message);
     }
