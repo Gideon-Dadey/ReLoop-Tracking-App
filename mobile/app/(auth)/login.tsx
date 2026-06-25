@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet, Text, View, TextInput, TouchableOpacity,
-  Alert, Platform, Image, KeyboardAvoidingView,
+  Alert, Platform, KeyboardAvoidingView,
 } from 'react-native';
+import { AnimatedLogo } from '@/components/AnimatedLogo';
 import { ButtonLoader } from '@/components/Skeleton';
 import * as SecureStore from 'expo-secure-store';
 import { StatusBar } from 'expo-status-bar';
@@ -83,7 +84,7 @@ export default function LoginScreen() {
     >
       <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
       <View style={styles.header}>
-        <Image source={require('../../assets/reloop.png')} style={styles.logoImage} />
+        <AnimatedLogo size={100} variant="settle" />
         <Text style={[screenHeader.subtitle, { color: c.textMuted, marginTop: 0 }]}>Circular Economy Platform</Text>
       </View>
 
@@ -189,7 +190,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 24, justifyContent: 'center' },
   header: { alignItems: 'center', marginTop: 20, marginBottom: 32 },
-  logoImage: { width: 100, height: 100, marginBottom: 16, borderRadius: 24 },
+  logoImage: { width: 100, height: 100, marginBottom: 16, borderRadius: 50 },
   form: { width: '100%', maxWidth: 400, alignSelf: 'center', marginBottom: 20 },
   label: { fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 18, letterSpacing: 0.2 },
   input: {

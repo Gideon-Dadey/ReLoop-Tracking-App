@@ -10,8 +10,8 @@ import {
 import { ThemeProvider } from '@react-navigation/native';
 import { Stack, Redirect, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useRef } from 'react';
-import { Platform } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/src/store/useAuthStore';
@@ -21,6 +21,7 @@ import { useThemeStore, useThemeColors, colors, getNavigationTheme, type ThemeMo
 import { applyAppFonts } from '@/src/theme/applyAppFonts';
 import * as NavigationBar from 'expo-navigation-bar';
 import { queryClient, clearSessionQueries } from '@/src/lib/queryClient';
+import { AppSplashOverlay } from '@/components/AppSplashOverlay';
 
 export { queryClient };
 
@@ -42,6 +43,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {
 });
 
 export default function RootLayout() {
+  const [splashDone, setSplashDone] = useState(false);
   const [loaded, error] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -67,12 +69,21 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <RootLayoutNav />
-      </QueryClientProvider>
+      <View style={styles.root}>
+        <QueryClientProvider client={queryClient}>
+          <RootLayoutNav />
+        </QueryClientProvider>
+        {!splashDone && (
+          <AppSplashOverlay onFinish={() => setSplashDone(true)} />
+        )}
+      </View>
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+});
 
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 

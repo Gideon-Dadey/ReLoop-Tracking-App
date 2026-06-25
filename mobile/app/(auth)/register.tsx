@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Platform, ScrollView, Image, KeyboardAvoidingView } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Platform, ScrollView, KeyboardAvoidingView } from 'react-native';
+import { AnimatedLogo } from '@/components/AnimatedLogo';
 import { ButtonLoader } from '@/components/Skeleton';
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '@/src/store/useAuthStore';
@@ -64,7 +65,7 @@ export default function RegisterScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.header}>
-        <Image source={require('../../assets/reloop.png')} style={styles.logoImage} />
+        <AnimatedLogo size={80} variant="settle" />
         <Text style={[screenHeader.authTitle, { color: c.text }]}>Create Account</Text>
         <Text style={[screenHeader.subtitle, { color: c.textMuted, marginTop: 6 }]}>
           Join the circular economy movement
@@ -166,7 +167,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { padding: 24, paddingTop: Platform.OS === 'ios' ? 60 : 48, paddingBottom: 40 },
   header: { alignItems: 'center', paddingBottom: 24, paddingTop: 16 },
-  logoImage: { width: 80, height: 80, marginBottom: 16, borderRadius: 20 },
+  logoImage: { width: 80, height: 80, marginBottom: 16, borderRadius: 40 },
   form: { width: '100%', maxWidth: 400, alignSelf: 'center' },
   label: { fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 18, letterSpacing: 0.2 },
   input: {

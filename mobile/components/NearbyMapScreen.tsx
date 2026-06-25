@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, useWindowDimensions, Platform, ScrollView } from 'react-native';
 import { MapSkeleton } from '@/components/Skeleton';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker } from 'react-native-maps';
+import { OsmMapView, type OsmMapViewRef } from '@/components/OsmMapView';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import {
@@ -14,6 +15,9 @@ import { useTabBarInsets } from '@/src/hooks/useTabBarInsets';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '@/src/api/service';
 import type { Vendor } from '@/src/api/service';
+
+/** Android production APKs use free OpenStreetMap (no Google Maps billing). iOS uses Apple Maps. */
+const useOpenStreetMap = Platform.OS === 'android';
 
 const MATERIAL_FILTERS = [
   { id: 'All', label: 'All', icon: Shapes, color: '#8B5CF6' },
@@ -36,6 +40,7 @@ export default function NearbyMapScreen({
   const { width, height } = useWindowDimensions();
   const { tabBarHeight } = useTabBarInsets();
   const mapRef = useRef<MapView>(null);
+  const osmMapRef = useRef<OsmMapViewRef>(null);
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [activeFilter, setActiveFilter] = useState('All');
@@ -56,23 +61,31 @@ export default function NearbyMapScreen({
 
   useEffect(() => {
     (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === 'granted') {
-        const loc = await Location.getCurrentPositionAsync({});
-        setLocation(loc);
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const loc = await Location.getCurrentPositionAsync({});
+          setLocation(loc);
+        }
+      } catch {
+        /* Location unavailable — map still works with default region */
       }
     })();
   }, []);
 
   const centerOnUser = useCallback(() => {
-    if (location) {
-      mapRef.current?.animateToRegion({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      }, 1000);
+    if (!location) return;
+    const { latitude, longitude } = location.coords;
+    if (useOpenStreetMap) {
+      osmMapRef.current?.centerOnUser(latitude, longitude);
+      return;
     }
+    mapRef.current?.animateToRegion({
+      latitude,
+      longitude,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    }, 1000);
   }, [location]);
 
   const getMarkerColor = useCallback((vendor: Vendor) => {
@@ -85,37 +98,53 @@ export default function NearbyMapScreen({
     return c.accent;
   }, [activeFilter, c.accent]);
 
+  const mapLayer = useOpenStreetMap ? (
+    <OsmMapView
+      ref={osmMapRef}
+      width={width}
+      height={height}
+      vendors={filteredVendors}
+      userLat={location?.coords.latitude}
+      userLng={location?.coords.longitude}
+      getMarkerColor={getMarkerColor}
+      onSelectVendor={setSelectedVendor}
+    />
+  ) : (
+    <MapView
+      ref={mapRef}
+      style={{ width, height }}
+      initialRegion={{
+        latitude: 5.6037,
+        longitude: -0.1870,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      }}
+      showsUserLocation
+      showsMyLocationButton={false}
+      onPress={() => setSelectedVendor(null)}
+      customMapStyle={MapStyle}
+      loadingEnabled
+    >
+      {filteredVendors.map((vendor) => (
+        vendor.location && (
+          <Marker
+            key={vendor._id}
+            coordinate={{ latitude: vendor.location.lat, longitude: vendor.location.lng }}
+            onPress={() => setSelectedVendor(vendor)}
+            tracksViewChanges={false}
+          >
+            <View style={[styles.markerContainer, { backgroundColor: getMarkerColor(vendor), borderColor: '#fff' }]}>
+              <MapPin color="#fff" size={16} strokeWidth={2.5} />
+            </View>
+          </Marker>
+        )
+      ))}
+    </MapView>
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>
-      <MapView
-        ref={mapRef}
-        style={{ width, height }}
-        initialRegion={{
-          latitude: 5.6037,
-          longitude: -0.1870,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        }}
-        showsUserLocation
-        showsMyLocationButton={false}
-        provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-        onPress={() => setSelectedVendor(null)}
-        customMapStyle={MapStyle}
-      >
-        {filteredVendors.map((vendor) => (
-          vendor.location && (
-            <Marker
-              key={vendor._id}
-              coordinate={{ latitude: vendor.location.lat, longitude: vendor.location.lng }}
-              onPress={() => setSelectedVendor(vendor)}
-            >
-              <View style={[styles.markerContainer, { backgroundColor: getMarkerColor(vendor), borderColor: '#fff' }]}>
-                <MapPin color="#fff" size={16} strokeWidth={2.5} />
-              </View>
-            </Marker>
-          )
-        ))}
-      </MapView>
+      {mapLayer}
 
       <View style={styles.topContainer}>
         <View style={styles.topRow}>
