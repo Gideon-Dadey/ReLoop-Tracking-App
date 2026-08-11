@@ -84,7 +84,7 @@ function buildMapHtml(
 
     ${userLat != null && userLng != null ? `
     L.circleMarker([${userLat}, ${userLng}], {
-      radius: 8, color: '#14B8A6', fillColor: '#14B8A6', fillOpacity: 0.9, weight: 2
+      radius: 8, color: '#000000', fillColor: '#000000', fillOpacity: 0.9, weight: 2
     }).addTo(map);
     ` : ''}
 

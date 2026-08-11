@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { StyleSheet, Text, View, FlatList, Image, Platform, RefreshControl, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, FlatList, Platform, RefreshControl, TouchableOpacity } from 'react-native';
 import { useThemeColors } from '@/src/store/useThemeStore';
 import { apiService } from '@/src/api/service';
 import type { LeaderboardEntry } from '@/src/api/service';
@@ -10,6 +10,7 @@ import {
 import { useRouter, Stack } from 'expo-router';
 import PinnedScreenHeader from '@/components/PinnedScreenHeader';
 import { screenHeader } from '@/src/theme/screenHeader';
+import UserAvatar from '@/components/UserAvatar';
 
 const RADIUS = 14;
 const PADDING = 16;
@@ -52,15 +53,14 @@ export default function CommunityScreen() {
            )}
         </View>
 
-        <Image 
-          source={{ uri: item.avatar || `https://api.dicebear.com/7.x/avataaars/png?seed=${item.userName}` }} 
-          style={styles.avatar} 
-        />
+        <View style={styles.avatar}>
+          <UserAvatar name={item.userName} uri={item.avatar} size="sm" />
+        </View>
 
         <View style={styles.userInfo}>
            <Text style={[styles.userName, { color: c.text }]}>{item.userName}</Text>
            <View style={styles.impactRow}>
-              <Leaf color="#10B981" size={12} />
+              <Leaf color={c.success} size={12} />
               <Text style={[styles.impactText, { color: c.textFaint }]}>
                  {item.impact?.plasticSaved?.toFixed(1) || 0}kg saved
               </Text>
@@ -79,8 +79,8 @@ export default function CommunityScreen() {
     <View style={styles.communityHeader}>
        <View style={[styles.statsGrid]}>
           <View style={[styles.statItem, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-             <View style={[styles.statIcon, { backgroundColor: '#10B98115' }]}>
-                <Leaf color="#10B981" size={20} />
+             <View style={[styles.statIcon, { backgroundColor: 'rgba(34,197,94,0.12)' }]}>
+                <Leaf color={c.success} size={20} />
              </View>
              <Text style={[styles.statValue, { color: c.text }]}>
                {stats?.totalPlasticSaved?.toFixed(1) || '0.0'}
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   },
   rankContainer: { width: 30, alignItems: 'center', justifyContent: 'center' },
   rankText: { fontSize: 14, fontWeight: '800' },
-  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#eee', marginHorizontal: 12 },
+  avatar: { marginHorizontal: 12 },
   userInfo: { flex: 1 },
   userName: { fontSize: 16, fontWeight: '700', marginBottom: 2 },
   impactRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },

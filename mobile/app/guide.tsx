@@ -52,14 +52,14 @@ export default function GuideScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-         <View style={[styles.heroCard, { backgroundColor: c.accent }]}>
+         <View style={[styles.heroCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder, borderWidth: StyleSheet.hairlineWidth }]}>
             <View style={styles.heroInfo}>
-               <Award color="#fff" size={32} strokeWidth={2.5} />
-               <Text style={styles.heroTitle}>Clean and Earn</Text>
-               <Text style={styles.heroDesc}>Ensure your containers are clean to receive 100% of your points and rewards.</Text>
+               <Award color={c.text} size={32} strokeWidth={2.5} />
+               <Text style={[styles.heroTitle, { color: c.heading }]}>Clean and Earn</Text>
+               <Text style={[styles.heroDesc, { color: c.textMuted }]}>Ensure your containers are clean to receive 100% of your points and rewards.</Text>
             </View>
             <View style={styles.heroDecorative}>
-               <PackageCheck color="#ffffff30" size={120} strokeWidth={1} />
+               <PackageCheck color={c.surfaceBorder} size={120} strokeWidth={1} />
             </View>
          </View>
 
@@ -74,7 +74,7 @@ export default function GuideScreen() {
 
          <GuideStep 
            icon={Wind} 
-           color="#10B981" 
+           color="#1E40AF" 
            title="2. Dry Thoroughly" 
            desc="Let the container air dry or wipe it with a cloth. Stacking wet containers can cause issues." 
          />

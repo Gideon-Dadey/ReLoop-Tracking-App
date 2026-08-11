@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DarkTheme, DefaultTheme, Theme } from '@react-navigation/native';
 import { fonts } from '@/src/theme/fonts';
+import { darkColors, lightColors } from '@/src/theme/tokens';
 
 const storage = {
   setItem: async (name: string, value: string) => {
@@ -18,62 +19,69 @@ const storage = {
 
 export type ThemeMode = 'dark' | 'light';
 
-/**
- * ReLoop brand — refined teal (circular economy / trust / tech).
- * More distinctive than generic bright green; reads premium on OLED dark UI.
- */
+/** Brand aliases are black — never mint-teal CTAs. */
 export const brand = {
-  /** Core identity */
-  teal: '#14B8A6',
-  tealDeep: '#0F766E',
-  tealBright: '#2DD4BF',
-  tealSoft: '#5EEAD4',
-  /** Dark hero strip (light mode home) */
-  heroDark: '#0A1614',
-  heroDarkMid: '#0C1F1B',
+  primary: '#000000',
+  teal: '#000000',
+  tealDeep: '#000000',
+  tealBright: '#ffffff',
+  tealSoft: '#a1a1aa',
+  heroDark: '#000000',
+  heroDarkMid: '#000000',
 };
 
-/** Twitter / X dark surfaces + ReLoop teal accent */
 export const colors = {
   dark: {
-    bg: '#000000',
-    surface: '#16181C',
-    surfaceBorder: '#2F3336',
-    headerBg: '#000000',
-    tabBg: '#000000',
-    tabBorder: '#2F3336',
-    text: '#E7E9EA',
-    textSecondary: '#D6D9DB',
-    textMuted: '#71767B',
-    textFaint: '#536471',
-    accent: brand.tealBright,
-    accentBright: brand.tealSoft,
-    accentSoft: 'rgba(45, 212, 191, 0.12)',
-    inputBg: '#202327',
-    syncBg: 'rgba(29, 155, 240, 0.08)',
-    syncBorder: 'rgba(29, 155, 240, 0.18)',
-    syncText: '#1D9BF0',
-    syncDot: '#1D9BF0',
+    bg: darkColors.background,
+    surface: darkColors.card,
+    surfaceBorder: darkColors.border,
+    headerBg: darkColors.background,
+    tabBg: darkColors.background,
+    tabBorder: darkColors.border,
+    text: darkColors.foreground,
+    textSecondary: darkColors.foreground,
+    textMuted: darkColors.mutedForeground,
+    textFaint: darkColors.mutedForeground,
+    heading: darkColors.heading,
+    accent: darkColors.primary,
+    onAccent: darkColors.primaryForeground,
+    accentBright: darkColors.primary,
+    accentSoft: darkColors.muted,
+    inputBg: darkColors.muted,
+    muted: darkColors.muted,
+    success: darkColors.success,
+    warning: darkColors.warning,
+    danger: darkColors.destructive,
+    syncBg: 'rgba(255, 255, 255, 0.06)',
+    syncBorder: 'rgba(255, 255, 255, 0.14)',
+    syncText: darkColors.foreground,
+    syncDot: darkColors.primary,
   },
   light: {
-    bg: '#F5F5F7',
-    surface: '#FFFFFF',
-    surfaceBorder: '#E5E7EB',
-    headerBg: '#FFFFFF',
-    tabBg: '#FFFFFF',
-    tabBorder: '#E5E7EB',
-    text: '#1A1A1A',
-    textSecondary: '#4B5563',
-    textMuted: '#6B7280',
-    textFaint: '#9CA3AF',
-    accent: brand.tealDeep,
-    accentBright: brand.teal,
-    accentSoft: 'rgba(15, 118, 110, 0.08)',
-    inputBg: '#F3F4F6',
-    syncBg: 'rgba(59, 130, 246, 0.05)',
-    syncBorder: 'rgba(59, 130, 246, 0.12)',
-    syncText: '#2563EB',
-    syncDot: '#3B82F6',
+    bg: lightColors.background,
+    surface: lightColors.card,
+    surfaceBorder: lightColors.border,
+    headerBg: lightColors.background,
+    tabBg: lightColors.background,
+    tabBorder: lightColors.border,
+    text: lightColors.foreground,
+    textSecondary: lightColors.foreground,
+    textMuted: lightColors.mutedForeground,
+    textFaint: lightColors.mutedForeground,
+    heading: lightColors.heading,
+    accent: lightColors.primary,
+    onAccent: lightColors.primaryForeground,
+    accentBright: lightColors.primary,
+    accentSoft: lightColors.muted,
+    inputBg: lightColors.muted,
+    muted: lightColors.muted,
+    success: lightColors.success,
+    warning: lightColors.warning,
+    danger: lightColors.destructive,
+    syncBg: 'rgba(15, 23, 42, 0.04)',
+    syncBorder: 'rgba(15, 23, 42, 0.10)',
+    syncText: lightColors.foreground,
+    syncDot: lightColors.primary,
   },
 };
 

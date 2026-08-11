@@ -1,7 +1,7 @@
 import { Platform, TextStyle, ViewStyle } from 'react-native';
 import { typography } from './fonts';
 
-/** Native-style screen typography shared across the app (Inter). */
+/** Native-style screen typography shared across the app (Geist). */
 export const screenHeader = {
   /** Primary screen title (Activity, Research, Settings, etc.) */
   title: {

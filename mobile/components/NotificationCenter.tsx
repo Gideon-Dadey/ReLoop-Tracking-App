@@ -18,7 +18,7 @@ export default function NotificationCenter({ visible, onClose }: NotificationCen
 
   const getIcon = (type: Notification['type']) => {
     switch (type) {
-      case 'SUCCESS': return <CheckCircle color="#10B981" size={18} />;
+      case 'SUCCESS': return <CheckCircle color={c.success} size={18} />;
       case 'WARNING': return <AlertTriangle color="#F59E0B" size={18} />;
       case 'ERROR': return <AlertCircle color="#EF4444" size={18} />;
       default: return <Info color="#3B82F6" size={18} />;
@@ -108,8 +108,8 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     height: height * 0.8,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
     paddingTop: 8,
   },
   header: {

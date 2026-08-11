@@ -15,6 +15,7 @@ import PinnedScreenHeader from '@/components/PinnedScreenHeader';
 import { screenHeader } from '@/src/theme/screenHeader';
 import { useAuthStore } from '@/src/store/useAuthStore';
 import { queryKeys } from '@/src/lib/queryKeys';
+import StatusBadge from '@/components/StatusBadge';
 
 const RADIUS = 14;
 const PADDING = 16;
@@ -82,12 +83,10 @@ export default function HistoryScreen() {
         activeOpacity={0.9}
       >
         <View style={styles.activeHeader}>
-           <View style={[styles.statusBadge, { backgroundColor: daysRemaining <= 2 ? '#FEF2F2' : '#F0FDF4' }]}>
-              <View style={[styles.statusDot, { backgroundColor: daysRemaining <= 2 ? '#EF4444' : '#22C55E' }]} />
-              <Text style={[styles.statusText, { color: daysRemaining <= 2 ? '#EF4444' : '#16A34A' }]}>
-                {daysRemaining === 0 ? 'DUE TODAY' : `${daysRemaining} DAYS LEFT`}
-              </Text>
-           </View>
+           <StatusBadge
+              label={daysRemaining === 0 ? 'Due today' : `${daysRemaining} days left`}
+              kind={daysRemaining <= 2 ? 'failed' : 'success'}
+           />
            <Text style={[styles.idText, { color: c.textFaint }]}>#{item.serialNumber}</Text>
         </View>
 
@@ -109,8 +108,8 @@ export default function HistoryScreen() {
                 style={[styles.returnBtn, { backgroundColor: c.accent }]}
                 onPress={() => router.push('/scanner')}
               >
-                 <Text style={styles.returnBtnText}>RETURN NOW</Text>
-                 <ArrowRight color="#fff" size={14} strokeWidth={3} />
+                 <Text style={[styles.returnBtnText, { color: c.onAccent }]}>RETURN NOW</Text>
+                 <ArrowRight color={c.onAccent} size={14} strokeWidth={3} />
               </TouchableOpacity>
            </View>
         </View>
@@ -126,15 +125,16 @@ export default function HistoryScreen() {
     return (
       <TouchableOpacity style={[styles.historyCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
          <View style={styles.historyTop}>
-            <View style={[styles.historyActionIcon, { backgroundColor: isReturn ? '#10B98110' : '#3B82F610' }]}>
-               {isReturn ? <ArrowDownLeft color="#10B981" size={18} /> : <ArrowUpRight color="#3B82F6" size={18} />}
+            <View style={[styles.historyActionIcon, { backgroundColor: isReturn ? 'rgba(34,197,94,0.12)' : '#DBEAFE' }]}>
+               {isReturn ? <ArrowDownLeft color={c.success} size={18} /> : <ArrowUpRight color="#1E40AF" size={18} />}
             </View>
             <View style={styles.historyMainContent}>
                <View style={styles.historyTextRow}>
                   <Text style={[styles.historyTitle, { color: c.text }]}>{isReturn ? 'Returned Container' : 'Borrowed Container'}</Text>
-                  <Text style={[styles.impactBadge, { color: isReturn ? '#10B981' : c.textMuted }]}>
-                     {isReturn ? `+${item.pointsAwarded} pts` : 'Ongoing'}
-                  </Text>
+                  <StatusBadge
+                    label={isReturn ? `+${item.pointsAwarded} pts` : 'Ongoing'}
+                    kind={isReturn ? 'success' : 'pending'}
+                  />
                </View>
                <Text style={[styles.historyTime, { color: c.textFaint }]}>{date} • {time}</Text>
             </View>
@@ -176,7 +176,7 @@ export default function HistoryScreen() {
                style={[styles.segment, activeSegment === 'borrows' && { backgroundColor: c.accent }]}
                onPress={() => setActiveSegment('borrows')}
             >
-               <Text style={[styles.segmentText, { color: activeSegment === 'borrows' ? '#fff' : c.textFaint }]}>
+               <Text style={[styles.segmentText, { color: activeSegment === 'borrows' ? c.onAccent : c.textFaint }]}>
                  Active ({activeBorrows.length})
                </Text>
             </TouchableOpacity>
@@ -184,7 +184,7 @@ export default function HistoryScreen() {
                style={[styles.segment, activeSegment === 'history' && { backgroundColor: c.accent }]}
                onPress={() => setActiveSegment('history')}
             >
-               <Text style={[styles.segmentText, { color: activeSegment === 'history' ? '#fff' : c.textFaint }]}>History</Text>
+               <Text style={[styles.segmentText, { color: activeSegment === 'history' ? c.onAccent : c.textFaint }]}>History</Text>
             </TouchableOpacity>
          </View>
       </View>
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
 
   activeBody: { gap: 16 },
   mainInfo: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  packageIcon: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  packageIcon: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center' },
   details: { flex: 1 },
   itemName: { fontSize: 18, fontWeight: '800', marginBottom: 2 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12, 
     borderRadius: RADIUS,
   },
-  returnBtnText: { color: '#fff', fontSize: 13, fontWeight: '900', letterSpacing: 1 },
+  returnBtnText: { fontSize: 13, fontWeight: '700', letterSpacing: 1 },
 
   // History Card Styles - Professional Revision
   historyCard: {
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   historyTop: { flexDirection: 'row', gap: 14, alignItems: 'center', marginBottom: 14 },
-  historyActionIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  historyActionIcon: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center' },
   historyMainContent: { flex: 1 },
   historyTextRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   historyTitle: { fontSize: 15, fontWeight: '700' },

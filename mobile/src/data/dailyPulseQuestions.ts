@@ -7,11 +7,11 @@ export interface DailyPulseQuestion {
 }
 
 export const PULSE_CATEGORY_COLORS: Record<PulseCategory, string> = {
-  Habits: '#14B8A6',
-  Motivation: '#8B5CF6',
-  Community: '#3B82F6',
-  Awareness: '#F59E0B',
-  Impact: '#10B981',
+  Habits: '#1E293B',
+  Motivation: '#6B21A8',
+  Community: '#1E40AF',
+  Awareness: '#9A3412',
+  Impact: '#334155',
 };
 
 /** Rotating bank — one question surfaced per day (21-day cycle). */

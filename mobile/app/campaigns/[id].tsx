@@ -115,7 +115,7 @@ export default function CampaignDetailScreen() {
       {campaign.isEvaluated && (
         <View style={[styles.section, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
           <View style={styles.evalHeader}>
-            <CheckCircle size={20} color="#10B981" />
+            <CheckCircle size={20} color={c.success} />
             <Text style={[styles.evalTitle, { color: c.text }]}>Evaluation Results</Text>
           </View>
 
@@ -154,8 +154,8 @@ export default function CampaignDetailScreen() {
           style={[styles.evalBtn, { backgroundColor: c.accent }]}
           onPress={() => setShowEval(true)}
         >
-          <Star size={18} color="#FFFFFF" />
-          <Text style={styles.evalBtnText}>Evaluate This Campaign</Text>
+          <Star size={18} color={c.onAccent} />
+          <Text style={[styles.evalBtnText, { color: c.onAccent }]}>Evaluate This Campaign</Text>
         </TouchableOpacity>
       )}
 
@@ -180,7 +180,7 @@ export default function CampaignDetailScreen() {
             onPress={() => evaluateMutation.mutate()}
             disabled={!allScored || evaluateMutation.isPending}
           >
-            <Text style={styles.submitText}>{evaluateMutation.isPending ? 'Submitting...' : 'Submit Evaluation'}</Text>
+            <Text style={[styles.submitText, { color: c.onAccent }]}>{evaluateMutation.isPending ? 'Submitting...' : 'Submit Evaluation'}</Text>
           </TouchableOpacity>
 
           {evaluateMutation.isError && (

@@ -21,7 +21,7 @@ const useOpenStreetMap = Platform.OS === 'android';
 
 const MATERIAL_FILTERS = [
   { id: 'All', label: 'All', icon: Shapes, color: '#8B5CF6' },
-  { id: 'Plastic', label: 'Plastic', icon: Droplet, color: '#10B981' },
+  { id: 'Plastic', label: 'Plastic', icon: Droplet, color: '#059669' },
   { id: 'Glass', label: 'Glass', icon: Layers, color: '#3B82F6' },
   { id: 'Metal', label: 'Metal', icon: Box, color: '#F59E0B' },
   { id: 'Electronic', label: 'E-Waste', icon: Package, color: '#EF4444' },
@@ -94,7 +94,7 @@ export default function NearbyMapScreen({
       return filter?.color || c.accent;
     }
     if (vendor.acceptedMaterials?.includes('Glass')) return '#3B82F6';
-    if (vendor.acceptedMaterials?.includes('Plastic')) return '#10B981';
+    if (vendor.acceptedMaterials?.includes('Plastic')) return '#059669';
     return c.accent;
   }, [activeFilter, c.accent]);
 
@@ -234,7 +234,7 @@ export default function NearbyMapScreen({
               <Text style={[styles.vendorAddress, { color: c.textMuted }]}>{selectedVendor.location.address}</Text>
             </View>
             <TouchableOpacity style={[styles.navBtn, { backgroundColor: c.accent }]}>
-              <Navigation color="#fff" size={20} />
+              <Navigation color={c.onAccent} size={20} />
             </TouchableOpacity>
           </View>
 

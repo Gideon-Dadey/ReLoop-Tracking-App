@@ -23,8 +23,9 @@ import {
   Flame,
   Award,
 } from 'lucide-react-native';
-import { useThemeColors, brand } from '@/src/store/useThemeStore';
+import { useThemeColors } from '@/src/store/useThemeStore';
 import { typography } from '@/src/theme/fonts';
+import { promoGradients } from '@/src/theme/tokens';
 import {
   buildReferralUrl,
   buildInviteMessage as buildShareInviteMessage,
@@ -179,24 +180,24 @@ export default function ShareInviteSheet({
         </Text>
 
         <LinearGradient
-          colors={[brand.tealDeep, '#0A1614']}
+          colors={promoGradients.slate}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.previewCard}
         >
           <View style={styles.previewBrand}>
-            <Recycle color={brand.tealSoft} size={18} />
+            <Recycle color="#E2E8F0" size={18} />
             <Text style={styles.previewBrandText}>ReLoop</Text>
           </View>
           <Text style={styles.previewHeadline}>@{userName} is reusing for good</Text>
           <View style={styles.previewStats}>
             <View style={styles.previewStat}>
-              <Leaf color={brand.tealSoft} size={14} />
+              <Leaf color="#E2E8F0" size={14} />
               <Text style={styles.previewStatVal}>{impactScore}</Text>
               <Text style={styles.previewStatLbl}>score</Text>
             </View>
             <View style={styles.previewStat}>
-              <Recycle color={brand.tealSoft} size={14} />
+              <Recycle color="#E2E8F0" size={14} />
               <Text style={styles.previewStatVal}>{totalReturns}</Text>
               <Text style={styles.previewStatLbl}>returns</Text>
             </View>
@@ -246,15 +247,10 @@ export default function ShareInviteSheet({
           accessibilityRole="button"
           accessibilityLabel="Share with friends"
         >
-          <LinearGradient
-            colors={[brand.teal, brand.tealDeep]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.primaryBtnGradient}
-          >
-            <Share2 color="#fff" size={20} strokeWidth={2.2} />
-            <Text style={styles.primaryBtnText}>Share with friends</Text>
-          </LinearGradient>
+          <View style={[styles.primaryBtnGradient, { backgroundColor: c.accent }]}>
+            <Share2 color={c.onAccent} size={20} strokeWidth={2.2} />
+            <Text style={[styles.primaryBtnText, { color: c.onAccent }]}>Share with friends</Text>
+          </View>
         </TouchableOpacity>
 
         {onShareImpactCard ? (
@@ -295,8 +291,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.45)',
   },
   sheet: {
-    borderTopLeftRadius: RADIUS + 6,
-    borderTopRightRadius: RADIUS + 6,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
     borderWidth: 1,
     borderBottomWidth: 0,
     paddingHorizontal: 20,
@@ -347,7 +343,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   previewBrandText: {
-    color: brand.tealSoft,
+    color: '#E2E8F0',
     fontSize: 14,
     letterSpacing: 0.5,
     ...typography.sectionTitle,

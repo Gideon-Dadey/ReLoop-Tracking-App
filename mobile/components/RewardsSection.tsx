@@ -138,7 +138,7 @@ export default function RewardsSection() {
                      disabled={userPoints < (selectedReward?.points || 0)}
                      onPress={confirmRedeem}
                    >
-                     <Text style={styles.redeemActionText}>
+                     <Text style={[styles.redeemActionText, { color: c.onAccent }]}>
                        {userPoints >= (selectedReward?.points || 0) ? 'Confirm Redemption' : 'Not Enough Points'}
                      </Text>
                    </TouchableOpacity>
@@ -154,7 +154,7 @@ export default function RewardsSection() {
 
               {redemptionStep === 'success' && (
                 <View style={styles.successView}>
-                   <CheckCircle color="#10B981" size={64} style={{ marginBottom: 20 }} />
+                   <CheckCircle color={c.success} size={64} style={{ marginBottom: 20 }} />
                    <Text style={[screenHeader.modalTitle, { color: c.text, textAlign: 'center' }]}>Reward Redeemed!</Text>
                    <Text style={[styles.successInstructions, { color: c.textMuted }]}>
                       Show this code to the vendor at checkout.
@@ -169,7 +169,7 @@ export default function RewardsSection() {
                      style={[styles.doneBtn, { backgroundColor: c.accent }]}
                      onPress={() => setSelectedReward(null)}
                    >
-                      <Text style={styles.doneBtnText}>Close</Text>
+                      <Text style={[styles.doneBtnText, { color: c.onAccent }]}>Close</Text>
                    </TouchableOpacity>
                 </View>
               )}
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
   costLabel: { fontSize: 11, fontWeight: '800' },
   costValue: { fontSize: 16, fontWeight: '800' },
   redeemActionBtn: { width: '100%', padding: 16, borderRadius: RADIUS, alignItems: 'center', marginTop: 16 },
-  redeemActionText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  redeemActionText: { fontSize: 16, fontWeight: '700' },
   loadingView: { height: 300, justifyContent: 'center', alignItems: 'center' },
   loadingTitle: { marginTop: 16, fontSize: 16, fontWeight: '600' },
   successView: { alignItems: 'center' },
@@ -232,5 +232,5 @@ const styles = StyleSheet.create({
   qrContainer: { marginTop: 24, alignItems: 'center', gap: 16 },
   voucherCode: { fontSize: 20, fontWeight: '900', letterSpacing: 2 },
   doneBtn: { width: '100%', padding: 16, borderRadius: RADIUS, alignItems: 'center', marginTop: 32 },
-  doneBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  doneBtnText: { fontSize: 16, fontWeight: '700' },
 });

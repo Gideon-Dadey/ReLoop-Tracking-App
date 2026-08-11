@@ -248,10 +248,10 @@ const styles = StyleSheet.create({
 
   scanFrame: { width: 240, height: 240, position: 'relative' },
   corner: { position: 'absolute', width: CORNER_SIZE, height: CORNER_SIZE },
-  topLeft: { top: 0, left: 0, borderTopWidth: CORNER_WIDTH, borderLeftWidth: CORNER_WIDTH, borderColor: '#10B981', borderTopLeftRadius: 10 },
-  topRight: { top: 0, right: 0, borderTopWidth: CORNER_WIDTH, borderRightWidth: CORNER_WIDTH, borderColor: '#10B981', borderTopRightRadius: 10 },
-  bottomLeft: { bottom: 0, left: 0, borderBottomWidth: CORNER_WIDTH, borderLeftWidth: CORNER_WIDTH, borderColor: '#10B981', borderBottomLeftRadius: 10 },
-  bottomRight: { bottom: 0, right: 0, borderBottomWidth: CORNER_WIDTH, borderRightWidth: CORNER_WIDTH, borderColor: '#10B981', borderBottomRightRadius: 10 },
+  topLeft: { top: 0, left: 0, borderTopWidth: CORNER_WIDTH, borderLeftWidth: CORNER_WIDTH, borderColor: '#ffffff', borderTopLeftRadius: 10 },
+  topRight: { top: 0, right: 0, borderTopWidth: CORNER_WIDTH, borderRightWidth: CORNER_WIDTH, borderColor: '#ffffff', borderTopRightRadius: 10 },
+  bottomLeft: { bottom: 0, left: 0, borderBottomWidth: CORNER_WIDTH, borderLeftWidth: CORNER_WIDTH, borderColor: '#ffffff', borderBottomLeftRadius: 10 },
+  bottomRight: { bottom: 0, right: 0, borderBottomWidth: CORNER_WIDTH, borderRightWidth: CORNER_WIDTH, borderColor: '#ffffff', borderBottomRightRadius: 10 },
 
   bottomBar: { paddingBottom: Platform.OS === 'ios' ? 100 : 80, alignItems: 'center' },
   hintText: { color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: '600' },

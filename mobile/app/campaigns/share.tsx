@@ -15,12 +15,12 @@ import { PlatformIcon, PLATFORM_META } from '@/components/PlatformIcon';
 
 const RADIUS = 14;
 
-type CardTheme = 'dark' | 'light' | 'green';
+type CardTheme = 'dark' | 'light' | 'slate';
 
 const CARD_THEMES: Record<CardTheme, { bg: string; text: string; accent: string; secondary: string }> = {
   dark: { bg: colors.dark.surface, text: colors.dark.text, accent: colors.dark.accent, secondary: colors.dark.textMuted },
   light: { bg: colors.light.surface, text: colors.light.text, accent: colors.light.accent, secondary: colors.light.textMuted },
-  green: { bg: '#064E3B', text: '#ECFDF5', accent: '#34D399', secondary: '#A7F3D0' },
+  slate: { bg: '#1E293B', text: '#ffffff', accent: '#E2E8F0', secondary: '#94A3B8' },
 };
 
 function ImpactCard({ theme, user }: { theme: CardTheme; user: any }) {
@@ -131,20 +131,20 @@ export default function ShareScreen() {
           style={[styles.typeBtn, shareType === 'impact' && { backgroundColor: c.accent }]}
           onPress={() => setShareType('impact')}
         >
-          <Text style={[styles.typeText, { color: shareType === 'impact' ? '#FFF' : c.textSecondary }]}>My Impact</Text>
+          <Text style={[styles.typeText, { color: shareType === 'impact' ? c.onAccent : c.textSecondary }]}>My Impact</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.typeBtn, shareType === 'campaign' && { backgroundColor: c.accent }]}
           onPress={() => setShareType('campaign')}
         >
-          <Text style={[styles.typeText, { color: shareType === 'campaign' ? '#FFF' : c.textSecondary }]}>Top Campaign</Text>
+          <Text style={[styles.typeText, { color: shareType === 'campaign' ? c.onAccent : c.textSecondary }]}>Top Campaign</Text>
         </TouchableOpacity>
       </View>
 
       {/* Theme Selector */}
       <Text style={[styles.label, { color: c.textSecondary }]}>Card Style</Text>
       <View style={styles.themeRow}>
-        {(['dark', 'light', 'green'] as CardTheme[]).map((t) => (
+        {(['dark', 'light', 'slate'] as CardTheme[]).map((t) => (
           <TouchableOpacity
             key={t}
             style={[
@@ -184,8 +184,8 @@ export default function ShareScreen() {
 
       {/* Share Button */}
       <TouchableOpacity style={[styles.shareBtn, { backgroundColor: c.accent }]} onPress={handleShare}>
-        <Share2 size={20} color="#FFFFFF" />
-        <Text style={styles.shareBtnText}>Share Card</Text>
+        <Share2 size={20} color={c.onAccent} />
+        <Text style={[styles.shareBtnText, { color: c.onAccent }]}>Share Card</Text>
       </TouchableOpacity>
     </ScrollView>
   );

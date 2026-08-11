@@ -20,7 +20,7 @@ const RADIUS = 14;
 
 function ScoreRing({ score, size = 40 }: { score: number; size?: number }) {
   const pct = (score / 5) * 100;
-  const color = pct >= 80 ? '#10B981' : pct >= 60 ? '#F59E0B' : pct >= 40 ? '#F97316' : '#EF4444';
+  const color = pct >= 80 ? '#059669' : pct >= 60 ? '#F59E0B' : pct >= 40 ? '#EA580C' : '#E11D48';
   return (
     <View style={[styles.scoreRing, { width: size, height: size, borderRadius: size / 2, borderColor: color }]}>
       <Text style={[styles.scoreText, { color, fontSize: size * 0.32 }]}>{score.toFixed(1)}</Text>
@@ -120,7 +120,7 @@ export default function CampaignsScreen() {
         onPress={() => setShowCreate(true)}
         activeOpacity={0.8}
       >
-        <Plus size={24} color="#FFFFFF" />
+        <Plus size={24} color={c.onAccent} />
       </TouchableOpacity>
 
       <Modal visible={showCreate} animationType="slide" transparent>
@@ -223,8 +223,8 @@ export default function CampaignsScreen() {
                 onPress={() => createMutation.mutate(form)}
                 disabled={!canSubmit || createMutation.isPending}
               >
-                <Share2 size={18} color="#FFFFFF" />
-                <Text style={styles.submitText}>{createMutation.isPending ? 'Submitting...' : 'Submit Campaign'}</Text>
+                <Share2 size={18} color={c.onAccent} />
+                <Text style={[styles.submitText, { color: c.onAccent }]}>{createMutation.isPending ? 'Submitting...' : 'Submit Campaign'}</Text>
               </TouchableOpacity>
 
               {createMutation.isError && (

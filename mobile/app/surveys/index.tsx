@@ -29,7 +29,7 @@ export default function SurveyScreen() {
           accessibilityRole="tab"
           accessibilityState={{ selected: tab === 'pulse' }}
         >
-          <Text style={[styles.tabText, { color: tab === 'pulse' ? '#FFF' : c.textSecondary }]}>
+          <Text style={[styles.tabText, { color: tab === 'pulse' ? c.onAccent : c.textSecondary }]}>
             Daily Pulse
           </Text>
         </TouchableOpacity>
@@ -39,7 +39,7 @@ export default function SurveyScreen() {
           accessibilityRole="tab"
           accessibilityState={{ selected: tab === 'research' }}
         >
-          <Text style={[styles.tabText, { color: tab === 'research' ? '#FFF' : c.textSecondary }]}>
+          <Text style={[styles.tabText, { color: tab === 'research' ? c.onAccent : c.textSecondary }]}>
             Research Survey
           </Text>
         </TouchableOpacity>

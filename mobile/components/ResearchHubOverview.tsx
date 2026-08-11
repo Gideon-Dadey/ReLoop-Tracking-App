@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Flame, Globe, BarChart3, ChevronRight } from 'lucide-react-native';
 import { useThemeColors } from '@/src/store/useThemeStore';
 import { useAuthStore } from '@/src/store/useAuthStore';
@@ -54,13 +53,12 @@ export default function ResearchHubOverview() {
 
   return (
     <View style={styles.wrap}>
-      <LinearGradient
-        colors={[c.accent + '18', c.accent + '06']}
-        style={[styles.hero, { borderColor: c.accent + '28' }]}
+      <View
+        style={[styles.hero, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}
       >
         <View style={styles.heroTop}>
           <View style={styles.heroText}>
-            <Text style={[styles.heroEyebrow, { color: c.accent }]}>SDG 12 RESEARCH</Text>
+            <Text style={[styles.heroEyebrow, { color: c.textMuted }]}>SDG 12 RESEARCH</Text>
             <Text style={[styles.heroTitle, { color: c.text }]}>Research Hub</Text>
             <Text style={[styles.heroDesc, { color: c.textSecondary }]}>
               Track campaigns, daily pulses, and SDG 12 alignment
@@ -80,25 +78,25 @@ export default function ResearchHubOverview() {
             <Text style={[styles.statLabel, { color: c.textMuted }]}>Evaluated</Text>
           </View>
           <View style={[styles.statPill, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-            <Globe size={16} color={c.accent} />
+            <Globe size={16} color="#1E40AF" />
             <Text style={[styles.statValue, { color: c.text }]}>{sdg}%</Text>
             <Text style={[styles.statLabel, { color: c.textMuted }]}>SDG 12</Text>
           </View>
         </View>
 
         <View style={styles.chipRow}>
-          <View style={[styles.chip, { backgroundColor: pulseDone ? c.accent + '18' : '#F59E0B18' }]}>
-            <Text style={[styles.chipText, { color: pulseDone ? c.accent : '#F59E0B' }]}>
+          <View style={[styles.chip, { backgroundColor: pulseDone ? 'rgba(34,197,94,0.12)' : 'rgba(245,158,11,0.12)' }]}>
+            <Text style={[styles.chipText, { color: pulseDone ? c.success : '#b45309' }]}>
               {pulseDone ? '✓ Pulse done today' : '○ Pulse pending'}
             </Text>
           </View>
-          <View style={[styles.chip, { backgroundColor: researchDone ? c.accent + '18' : c.inputBg }]}>
-            <Text style={[styles.chipText, { color: researchDone ? c.accent : c.textMuted }]}>
+          <View style={[styles.chip, { backgroundColor: researchDone ? 'rgba(34,197,94,0.12)' : c.inputBg }]}>
+            <Text style={[styles.chipText, { color: researchDone ? c.success : c.textMuted }]}>
               {researchDone ? '✓ Research survey' : '○ Research survey'}
             </Text>
           </View>
         </View>
-      </LinearGradient>
+      </View>
 
       {!pulseDone && (
         <TouchableOpacity
@@ -106,12 +104,12 @@ export default function ResearchHubOverview() {
           onPress={() => router.push('/surveys?tab=pulse' as any)}
           activeOpacity={0.85}
         >
-          <Flame size={18} color="#FFF" />
+          <Flame size={18} color={c.onAccent} />
           <View style={styles.pulseCtaText}>
-            <Text style={styles.pulseCtaTitle}>Today's pulse is waiting</Text>
-            <Text style={styles.pulseCtaSub}>30 seconds · keep your streak alive</Text>
+            <Text style={[styles.pulseCtaTitle, { color: c.onAccent }]}>Today's pulse is waiting</Text>
+            <Text style={[styles.pulseCtaSub, { color: c.onAccent, opacity: 0.72 }]}>30 seconds · keep your streak alive</Text>
           </View>
-          <ChevronRight size={18} color="#FFF" />
+          <ChevronRight size={18} color={c.onAccent} />
         </TouchableOpacity>
       )}
     </View>

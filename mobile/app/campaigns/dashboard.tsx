@@ -47,7 +47,7 @@ export default function CampaignDashboard() {
   }
 
   const barData = [
-    { value: stats.averageScores.visualDesignQuality, label: 'Visual', frontColor: '#10B981' },
+    { value: stats.averageScores.visualDesignQuality, label: 'Visual', frontColor: '#334155' },
     { value: stats.averageScores.narrativeCoherence, label: 'Narrative', frontColor: '#3B82F6' },
     { value: stats.averageScores.circularEconomyAlignment, label: 'Circular', frontColor: '#8B5CF6' },
     { value: stats.averageScores.behavioralCallToAction, label: 'Action', frontColor: '#F59E0B' },

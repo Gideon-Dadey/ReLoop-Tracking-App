@@ -1,6 +1,6 @@
-import React, { useState, useCallback, memo } from 'react';
+import React, { useState } from 'react';
 import {
-  StyleSheet, Text, View, TouchableOpacity, Image, TextInput,
+  StyleSheet, Text, View, TouchableOpacity, TextInput,
   Alert, ScrollView, Platform, Modal, Share,
   KeyboardAvoidingView,
 } from 'react-native';
@@ -9,7 +9,7 @@ import { useThemeColors, useThemeStore } from '@/src/store/useThemeStore';
 import { apiService } from '@/src/api/service';
 import {
   LogOut, Edit2, Check, X,
-  Camera, Key, Sun, Moon, ChevronRight, ShieldCheck,
+  Camera, Key, Sun, Moon, ShieldCheck,
   Bell, Heart, HelpCircle, Star, Leaf, Info, Package, ArrowLeft,
 } from 'lucide-react-native';
 import { useQueryClient } from '@tanstack/react-query';
@@ -18,48 +18,16 @@ import { useRouter } from 'expo-router';
 import PinnedScreenHeader from '@/components/PinnedScreenHeader';
 import { useNotificationPreferencesStore } from '@/src/store/useNotificationPreferences';
 import * as ImagePicker from 'expo-image-picker';
-import type { LucideIcon } from 'lucide-react-native';
 import { ButtonLoader } from '@/components/Skeleton';
 import { screenHeader } from '@/src/theme/screenHeader';
 import { queryKeys } from '@/src/lib/queryKeys';
 import { buildReferralUrl, buildInviteMessage } from '@/src/lib/shareLinks';
+import UserAvatar from '@/components/UserAvatar';
+import CardSurface from '@/components/CardSurface';
+import MenuRow from '@/components/MenuRow';
+import StatusBadge from '@/components/StatusBadge';
 
 const RADIUS = 14;
-
-interface MenuItemProps {
-  icon: LucideIcon;
-  label: string;
-  color: string;
-  onPress?: () => void;
-  rightElement?: React.ReactNode;
-  surfaceColor: string;
-  borderColor: string;
-  textColor: string;
-  faintColor: string;
-}
-
-const ProfileMenuItem = memo(function ProfileMenuItem({
-  icon: Icon, label, color, onPress, rightElement,
-  surfaceColor, borderColor, textColor, faintColor,
-}: MenuItemProps) {
-  return (
-    <TouchableOpacity
-      style={[styles.menuItem, { backgroundColor: surfaceColor, borderColor }]}
-      onPress={onPress}
-      activeOpacity={0.7}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-    >
-      <View style={styles.menuLeft}>
-        <View style={[styles.menuIcon, { backgroundColor: color + '10' }]}>
-          <Icon color={color} size={20} strokeWidth={2} />
-        </View>
-        <Text style={[styles.menuLabel, { color: textColor }]}>{label}</Text>
-      </View>
-      {rightElement || <ChevronRight color={faintColor} size={18} />}
-    </TouchableOpacity>
-  );
-});
 
 export default function ProfileScreen() {
   const { user, updateUser, logout } = useAuthStore();
@@ -211,7 +179,6 @@ export default function ProfileScreen() {
     );
   };
 
-  const avatarUrl = user.avatar || `https://api.dicebear.com/7.x/initials/png?seed=${user.userName}&backgroundColor=10B981`;
   const joinDate = user.createdAt
     ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     : 'Member since 2024';
@@ -248,10 +215,10 @@ export default function ProfileScreen() {
           <View style={styles.heroMain}>
             <View style={styles.avatarColumn}>
               <TouchableOpacity onPress={showAvatarOptions} style={styles.avatarContainer} activeOpacity={0.8} accessibilityLabel="Change profile picture" accessibilityRole="button">
-                <Image source={{ uri: avatarUrl }} style={styles.avatar} />
-                {loading && <View style={styles.avatarLoader}><ButtonLoader color={c.accent} /></View>}
-                <View style={[styles.editBadge, { backgroundColor: c.accent }]}>
-                  <Camera color="#fff" size={12} />
+                <UserAvatar name={user.userName} uri={user.avatar} size="lg" verified={(user.impact?.totalReturns ?? 0) > 0} />
+                {loading && <View style={styles.avatarLoader}><ButtonLoader color={c.onAccent} /></View>}
+                <View style={[styles.editBadge, { backgroundColor: c.accent, borderColor: c.surface }]}>
+                  <Camera color={c.onAccent} size={12} />
                 </View>
               </TouchableOpacity>
               {user.avatar ? (
@@ -301,7 +268,7 @@ export default function ProfileScreen() {
             </View>
             <View style={[styles.statDivider, { backgroundColor: c.surfaceBorder }]} />
             <View style={styles.statBox}>
-              <Leaf color="#10B981" size={16} />
+              <Leaf color={c.success} size={16} />
               <Text style={[styles.statNum, { color: c.text }]}>{user.impact?.plasticSaved?.toFixed(1) || 0}</Text>
               <Text style={[styles.statName, { color: c.textFaint }]}>Eco Score</Text>
             </View>
@@ -318,33 +285,37 @@ export default function ProfileScreen() {
 
         <View style={styles.sectionMargin}>
           <Text style={[styles.groupLabel, { color: c.textFaint }]}>ACCOUNT</Text>
-          <View style={styles.groupCard}>
-            <ProfileMenuItem
-              icon={ShieldCheck} label="Security & Privacy" color="#10B981"
-              surfaceColor={c.surface} borderColor={c.surfaceBorder} textColor={c.text} faintColor={c.textFaint}
-              rightElement={<Text style={{ fontSize: 13, color: '#10B981', fontWeight: '700' }}>ACTIVE</Text>}
+          <CardSurface style={styles.groupCard}>
+            <MenuRow
+              icon={ShieldCheck}
+              title="Security & Privacy"
+              well="slate"
+              right={<StatusBadge label="Active" kind="success" />}
             />
-            <ProfileMenuItem
-              icon={Key} label="Change Password" color="#3B82F6"
+            <MenuRow
+              icon={Key}
+              title="Change Password"
+              well="sky"
               onPress={() => setPassModalVisible(true)}
-              surfaceColor={c.surface} borderColor={c.surfaceBorder} textColor={c.text} faintColor={c.textFaint}
             />
-            <ProfileMenuItem
-              icon={Bell} label="Notifications" color="#F59E0B"
+            <MenuRow
+              icon={Bell}
+              title="Notifications"
+              well="amber"
               onPress={() => setNotificationsEnabled(!notificationsEnabled)}
-              surfaceColor={c.surface} borderColor={c.surfaceBorder} textColor={c.text} faintColor={c.textFaint}
-              rightElement={<Text style={{ fontSize: 12, color: notificationsEnabled ? '#10B981' : c.textFaint, fontWeight: '700' }}>{notificationsEnabled ? 'ON' : 'OFF'}</Text>}
+              right={<StatusBadge label={notificationsEnabled ? 'On' : 'Off'} kind={notificationsEnabled ? 'success' : 'other'} />}
+              showDivider={false}
             />
-          </View>
+          </CardSurface>
         </View>
 
         <View style={styles.sectionMargin}>
           <Text style={[styles.groupLabel, { color: c.textFaint }]}>SUPPORT & SOCIAL</Text>
-          <View style={styles.groupCard}>
-            <ProfileMenuItem icon={Heart} label="Tell a Friend" color="#EC4899" onPress={handleShare} surfaceColor={c.surface} borderColor={c.surfaceBorder} textColor={c.text} faintColor={c.textFaint} />
-            <ProfileMenuItem icon={HelpCircle} label="Help Center" color="#6366F1" onPress={showHelp} surfaceColor={c.surface} borderColor={c.surfaceBorder} textColor={c.text} faintColor={c.textFaint} />
-            <ProfileMenuItem icon={Info} label="About ReLoop" color="#6B7280" onPress={showAbout} surfaceColor={c.surface} borderColor={c.surfaceBorder} textColor={c.text} faintColor={c.textFaint} />
-          </View>
+          <CardSurface style={styles.groupCard}>
+            <MenuRow icon={Heart} title="Tell a Friend" well="rose" onPress={handleShare} />
+            <MenuRow icon={HelpCircle} title="Help Center" well="violet" onPress={showHelp} />
+            <MenuRow icon={Info} title="About ReLoop" well="slate" onPress={showAbout} showDivider={false} />
+          </CardSurface>
         </View>
 
         <TouchableOpacity
@@ -417,7 +388,7 @@ export default function ProfileScreen() {
                 accessibilityLabel="Save new password"
                 accessibilityRole="button"
               >
-                {loading ? <ButtonLoader color="#fff" /> : <Text style={styles.saveBtnText}>Save Changes</Text>}
+                {loading ? <ButtonLoader color={c.onAccent} /> : <Text style={[styles.saveBtnText, { color: c.onAccent }]}>Save Changes</Text>}
               </TouchableOpacity>
             </View>
           </View>
@@ -440,17 +411,16 @@ const styles = StyleSheet.create({
   },
   heroMain: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
   avatarColumn: { alignItems: 'center' },
-  avatarContainer: { position: 'relative', width: 84, height: 84 },
+  avatarContainer: { position: 'relative', width: 80, height: 80 },
   removePhotoBtn: { marginTop: 8, paddingVertical: 4, paddingHorizontal: 8 },
   removePhotoText: { color: '#EF4444', fontSize: 12, fontWeight: '700' },
-  avatar: { width: '100%', height: '100%', borderRadius: 42 },
   avatarLoader: {
     ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)',
-    borderRadius: 42, justifyContent: 'center', alignItems: 'center',
+    borderRadius: 40, justifyContent: 'center', alignItems: 'center',
   },
   editBadge: {
     position: 'absolute', bottom: 0, right: 0, width: 26, height: 26,
-    borderRadius: 13, borderWidth: 2, borderColor: '#fff',
+    borderRadius: 13, borderWidth: 2,
     justifyContent: 'center', alignItems: 'center',
   },
   heroInfo: { marginLeft: 20, flex: 1 },
@@ -469,14 +439,7 @@ const styles = StyleSheet.create({
 
   sectionMargin: { marginTop: 32 },
   groupLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 1.2, marginBottom: 12, paddingLeft: 4 },
-  groupCard: { backgroundColor: 'transparent', gap: 12 },
-  menuItem: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    padding: 14, borderRadius: RADIUS, borderWidth: 1,
-  },
-  menuLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  menuIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  menuLabel: { fontSize: 16, fontWeight: '700' },
+  groupCard: { overflow: 'hidden' },
 
   logoutBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
@@ -498,5 +461,5 @@ const styles = StyleSheet.create({
   inputGroup: { gap: 16 },
   modalInput: { padding: 16, borderRadius: RADIUS, fontSize: 16, fontWeight: '600' },
   saveBtn: { paddingVertical: 18, borderRadius: RADIUS, alignItems: 'center', marginTop: 24 },
-  saveBtnText: { color: '#fff', fontSize: 17, fontWeight: '800' },
+  saveBtnText: { fontSize: 17, fontWeight: '700' },
 });

@@ -1,34 +1,30 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { Tabs } from 'expo-router';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { House, ClipboardList, MapPin, BarChart3, QrCode } from 'lucide-react-native';
 import { useThemeColors } from '@/src/store/useThemeStore';
 import { useTabBarInsets } from '@/src/hooks/useTabBarInsets';
 import { fonts } from '@/src/theme/fonts';
 import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
-import type { ComponentProps } from 'react';
+import type { LucideIcon } from 'lucide-react-native';
 
-const SCAN_CIRCLE_SIZE = 50;
-const TAB_ICON_SIZE = 24;
-
-type IoniconName = ComponentProps<typeof Ionicons>['name'];
+const SCAN_CIRCLE_SIZE = 54;
+const TAB_ICON_SIZE = 22;
 
 function TabIcon({
   focused,
   color,
-  activeIcon,
-  inactiveIcon,
+  icon: Icon,
 }: {
   focused: boolean;
   color: string;
-  activeIcon: IoniconName;
-  inactiveIcon: IoniconName;
+  icon: LucideIcon;
 }) {
   return (
-    <Ionicons
-      name={focused ? activeIcon : inactiveIcon}
+    <Icon
       size={TAB_ICON_SIZE}
       color={color}
+      strokeWidth={focused ? 2.4 : 1.8}
     />
   );
 }
@@ -48,7 +44,7 @@ const CustomScanButton = ({ onPress, accessibilityState, style }: BottomTabBarBu
     >
       <View style={styles.scanButtonFloating} pointerEvents="none">
         <View style={[styles.scanButton, { backgroundColor: c.accent }]}>
-          <Ionicons name="qr-code" size={26} color="#fff" />
+          <QrCode size={24} color={c.onAccent} strokeWidth={2.2} />
         </View>
       </View>
       <View style={styles.iconSlot} />
@@ -97,7 +93,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon focused={focused} color={color} activeIcon="home" inactiveIcon="home-outline" />
+            <TabIcon focused={focused} color={color} icon={House} />
           ),
         }}
       />
@@ -106,7 +102,7 @@ export default function TabLayout() {
         options={{
           title: 'Activity',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon focused={focused} color={color} activeIcon="pulse" inactiveIcon="pulse-outline" />
+            <TabIcon focused={focused} color={color} icon={ClipboardList} />
           ),
         }}
       />
@@ -124,7 +120,7 @@ export default function TabLayout() {
         options={{
           title: 'Research',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon focused={focused} color={color} activeIcon="bar-chart" inactiveIcon="bar-chart-outline" />
+            <TabIcon focused={focused} color={color} icon={BarChart3} />
           ),
         }}
       />
@@ -133,7 +129,7 @@ export default function TabLayout() {
         options={{
           title: 'Map',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon focused={focused} color={color} activeIcon="map" inactiveIcon="map-outline" />
+            <TabIcon focused={focused} color={color} icon={MapPin} />
           ),
         }}
       />

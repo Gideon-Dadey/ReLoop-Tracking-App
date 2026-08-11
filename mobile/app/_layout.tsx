@@ -1,12 +1,12 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
+  Geist_400Regular,
+  Geist_500Medium,
+  Geist_600SemiBold,
+  Geist_700Bold,
   useFonts,
-} from '@expo-google-fonts/inter';
+} from '@expo-google-fonts/geist';
 import { ThemeProvider } from '@react-navigation/native';
 import { Stack, Redirect, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -35,7 +35,7 @@ export {
 } from 'expo-router';
 
 export const unstable_settings = {
-  initialRouteName: '(auth)/login',
+  initialRouteName: '(auth)/welcome',
 };
 
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -45,10 +45,10 @@ SplashScreen.preventAutoHideAsync().catch(() => {
 export default function RootLayout() {
   const [splashDone, setSplashDone] = useState(false);
   const [loaded, error] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
+    Geist_400Regular,
+    Geist_500Medium,
+    Geist_600SemiBold,
+    Geist_700Bold,
     ...FontAwesome.font,
     ...FontAwesome5.font,
   });
@@ -88,8 +88,8 @@ const styles = StyleSheet.create({
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 
 function getStatusBarStyle(segments: string[], mode: ThemeMode): 'light' | 'dark' {
-  const isHome = segments[0] === '(tabs)' && (!segments[1] || segments[1] === 'index');
-  if (isHome) return 'light';
+  const inAuth = segments[0] === '(auth)';
+  if (inAuth) return 'light';
   return mode === 'dark' ? 'light' : 'dark';
 }
 
@@ -129,13 +129,14 @@ function RootLayoutNav() {
     <ThemeProvider value={getNavigationTheme(mode)}>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg }, animation: 'fade' }}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(auth)/welcome" />
         <Stack.Screen name="(auth)/login" />
         <Stack.Screen name="(auth)/register" />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
       <StatusBar style={statusBarStyle} />
       {/* Auth redirects */}
-      {!user && !inAuthGroup && <Redirect href="/(auth)/login" />}
+      {!user && !inAuthGroup && <Redirect href="/(auth)/welcome" />}
       {user && inAuthGroup && <Redirect href="/(tabs)" />}
     </ThemeProvider>
   );

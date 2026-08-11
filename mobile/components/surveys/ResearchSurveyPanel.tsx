@@ -46,7 +46,7 @@ const SECTION_INFO = {
     title: 'Community Resilience',
     subtitle: 'How connected and empowered you feel as part of the eco community',
     icon: Users,
-    color: '#10B981',
+    color: '#1E40AF',
   },
 };
 
@@ -261,8 +261,8 @@ export default function ResearchSurveyPanel() {
           onPress={startSurvey}
           activeOpacity={0.85}
         >
-          <Text style={styles.startBtnText}>Begin Survey</Text>
-          <ChevronRight size={20} color="#FFF" />
+          <Text style={[styles.startBtnText, { color: c.onAccent }]}>Begin Survey</Text>
+          <ChevronRight size={20} color={c.onAccent} />
         </TouchableOpacity>
       </ScrollView>
     );
@@ -286,8 +286,8 @@ export default function ResearchSurveyPanel() {
             onPress={continueSectionB}
             activeOpacity={0.85}
           >
-            <Text style={styles.startBtnText}>Continue</Text>
-            <ChevronRight size={20} color="#FFF" />
+            <Text style={[styles.startBtnText, { color: c.onAccent }]}>Continue</Text>
+            <ChevronRight size={20} color={c.onAccent} />
           </TouchableOpacity>
         </View>
       </View>
@@ -376,8 +376,8 @@ export default function ResearchSurveyPanel() {
               onPress={() => answers[question.id] && goNext()}
               disabled={!answers[question.id]}
             >
-              <Text style={[styles.navBtnText, { color: '#FFF' }]}>Next</Text>
-              <ChevronRight size={20} color="#FFF" />
+              <Text style={[styles.navBtnText, { color: c.onAccent }]}>Next</Text>
+              <ChevronRight size={20} color={c.onAccent} />
             </TouchableOpacity>
           )}
 
@@ -387,10 +387,10 @@ export default function ResearchSurveyPanel() {
               onPress={() => submitMutation.mutate()}
               disabled={!allAnswered || submitMutation.isPending}
             >
-              <Text style={[styles.navBtnText, { color: '#FFF' }]}>
+              <Text style={[styles.navBtnText, { color: c.onAccent }]}>
                 {submitMutation.isPending ? 'Submitting...' : 'Submit'}
               </Text>
-              <CheckCircle2 size={18} color="#FFF" />
+              <CheckCircle2 size={18} color={c.onAccent} />
             </TouchableOpacity>
           )}
         </View>
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
   privacyNoteInline: { marginTop: 0, marginBottom: 12 },
   privacyText: { flex: 1, fontSize: 12, lineHeight: 17 },
   startBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 16, borderRadius: RADIUS, marginTop: 20 },
-  startBtnText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
+  startBtnText: { fontSize: 16, fontWeight: '600' },
   sectionTransition: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   sectionTransitionIcon: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
   sectionTransitionEyebrow: { fontSize: 12, fontWeight: '700', letterSpacing: 1.5, marginBottom: 8 },

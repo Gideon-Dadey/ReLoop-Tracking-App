@@ -4,8 +4,8 @@ import { fontFamilyForWeight, fonts } from './fonts';
 let applied = false;
 
 /**
- * Applies Inter globally after fonts are loaded.
- * Resolves fontWeight → correct Inter file so weights render on iOS and Android.
+ * Applies Geist globally after fonts are loaded.
+ * Resolves fontWeight → correct Geist file so weights render on iOS and Android.
  */
 export function applyAppFonts() {
   if (applied) return;

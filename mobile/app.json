@@ -4,23 +4,23 @@
     "slug": "reloop",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/Re.png",
+    "icon": "./assets/reloop-star.png",
     "scheme": "ReLoop",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/Re.png",
+      "image": "./assets/reloop-star.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#000000"
     },
     "ios": {
       "supportsTablet": true,
-      "icon": "./assets/Re.png"
+      "icon": "./assets/reloop-star.png"
     },
     "android": {
       "package": "com.reloop.app",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/Re.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/reloop-star.png",
+        "backgroundColor": "#000000"
       },
       "predictiveBackGestureEnabled": false,
       "edgeToEdgeEnabled": true,
@@ -31,7 +31,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/reloop-star.png"
     },
     "plugins": [
       "expo-router",
@@ -40,13 +40,13 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#ffffff",
-          "image": "./assets/Re.png",
-          "imageWidth": 240,
+          "backgroundColor": "#000000",
+          "image": "./assets/reloop-star.png",
+          "imageWidth": 180,
           "resizeMode": "contain",
           "dark": {
-            "backgroundColor": "#15202B",
-            "image": "./assets/Re.png"
+            "backgroundColor": "#000000",
+            "image": "./assets/reloop-star.png"
           }
         }
       ]

@@ -127,7 +127,7 @@ export default function ResearchScreen() {
             icon={MessageCircle}
             title="Community Survey"
             description="Daily pulse check-ins and the one-time research survey"
-            color="#10B981"
+            color="#1E40AF"
             badge={pulseStatus && !pulseStatus.completedToday ? 'Today' : undefined}
             onPress={() => router.push('/surveys' as any)}
           />
@@ -160,7 +160,7 @@ export default function ResearchScreen() {
             icon={Users}
             title="Eco Network"
             description="Community leaderboard and collective plastic saved"
-            color="#14B8A6"
+            color="#64748B"
             onPress={() => router.push('/community' as any)}
           />
         </View>

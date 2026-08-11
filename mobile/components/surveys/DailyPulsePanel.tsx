@@ -164,7 +164,7 @@ export default function DailyPulsePanel() {
         onPress={() => submitMutation.mutate()}
         disabled={!selected || submitMutation.isPending}
       >
-        <Text style={styles.submitText}>
+        <Text style={[styles.submitText, { color: c.onAccent }]}>
           {submitMutation.isPending ? 'Saving...' : 'Submit today\'s pulse'}
         </Text>
       </TouchableOpacity>
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
   likertEmoji: { fontSize: 22 },
   likertLabel: { fontSize: 10, textAlign: 'center', fontWeight: '500' },
   submitBtn: { marginTop: 28, paddingVertical: 16, borderRadius: RADIUS, alignItems: 'center' },
-  submitText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
+  submitText: { fontSize: 16, fontWeight: '600' },
   hint: { fontSize: 12, textAlign: 'center', marginTop: 14, lineHeight: 18 },
   errorText: { color: '#EF4444', fontSize: 13, textAlign: 'center', marginTop: 12 },
   completedContent: { padding: 20, paddingBottom: 40 },

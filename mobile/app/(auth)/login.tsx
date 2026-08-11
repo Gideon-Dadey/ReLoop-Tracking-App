@@ -1,31 +1,35 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  StyleSheet, Text, View, TextInput, TouchableOpacity,
-  Alert, Platform, KeyboardAvoidingView,
+  StyleSheet, View, TouchableOpacity, Text, Alert, Platform, KeyboardAvoidingView,
 } from 'react-native';
-import { AnimatedLogo } from '@/components/AnimatedLogo';
-import { ButtonLoader } from '@/components/Skeleton';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
 import { StatusBar } from 'expo-status-bar';
-import { useAuthStore } from '@/src/store/useAuthStore';
-import { useThemeColors, useThemeStore } from '@/src/store/useThemeStore';
-import { screenHeader } from '@/src/theme/screenHeader';
-import { apiService } from '@/src/api/service';
-import { Check, Eye, EyeOff } from 'lucide-react-native';
+import { Check } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { useAuthStore } from '@/src/store/useAuthStore';
+import { apiService } from '@/src/api/service';
+import { authChrome } from '@/src/theme/tokens';
+import {
+  AuthBrand,
+  AuthButton,
+  AuthField,
+  AuthFooter,
+  AuthHeading,
+  AuthSwitch,
+} from '@/components/auth/AuthChrome';
 
-const RADIUS = 14;
 const REMEMBER_KEY = 'reloop_remember_email';
 
 export default function LoginScreen() {
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [focused, setFocused] = useState<'email' | 'password' | null>(null);
   const { setAuth } = useAuthStore();
-  const c = useThemeColors();
-  const mode = useThemeStore((s) => s.mode);
 
   useEffect(() => {
     (async () => {
@@ -79,21 +83,20 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: c.bg }]}
+      style={[styles.container, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 16 }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
-      <View style={styles.header}>
-        <AnimatedLogo size={100} variant="settle" />
-        <Text style={[screenHeader.subtitle, { color: c.textMuted, marginTop: 0 }]}>Circular Economy Platform</Text>
-      </View>
+      <StatusBar style="light" />
+      <View style={styles.body}>
+        <AuthBrand />
+        <AuthHeading
+          title="Welcome back"
+          subtitle="Sign in to continue your loop."
+        />
 
-      <View style={styles.form}>
-        <Text style={[styles.label, { color: c.textSecondary }]}>Email Address</Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: c.inputBg, borderColor: c.surfaceBorder, color: c.text }]}
-          placeholder="Enter your email"
-          placeholderTextColor={c.textFaint}
+        <AuthField
+          label="Email"
+          placeholder="name@email.com"
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
@@ -102,27 +105,28 @@ export default function LoginScreen() {
           autoComplete="email"
           returnKeyType="next"
           accessibilityLabel="Email address"
+          focused={focused === 'email'}
+          onFocus={() => setFocused('email')}
+          onBlur={() => setFocused(null)}
         />
 
-        <Text style={[styles.label, { color: c.textSecondary }]}>Password</Text>
-        <View style={[styles.inputRow, { backgroundColor: c.inputBg, borderColor: c.surfaceBorder }]}>
-          <TextInput
-            style={[styles.inputFlex, { color: c.text }]}
-            placeholder="Enter your password"
-            placeholderTextColor={c.textFaint}
-            secureTextEntry={!showPassword}
-            value={password}
-            onChangeText={setPassword}
-            textContentType="password"
-            autoComplete="password"
-            returnKeyType="done"
-            onSubmitEditing={handleLogin}
-            accessibilityLabel="Password"
-          />
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn} activeOpacity={0.6}>
-            {showPassword ? <EyeOff size={20} color={c.textMuted} /> : <Eye size={20} color={c.textMuted} />}
-          </TouchableOpacity>
-        </View>
+        <AuthField
+          label="Password"
+          placeholder="Your password"
+          value={password}
+          onChangeText={setPassword}
+          textContentType="password"
+          autoComplete="password"
+          returnKeyType="done"
+          onSubmitEditing={handleLogin}
+          accessibilityLabel="Password"
+          focused={focused === 'password'}
+          onFocus={() => setFocused('password')}
+          onBlur={() => setFocused(null)}
+          secureToggle
+          secureVisible={showPassword}
+          onToggleSecure={() => setShowPassword((v) => !v)}
+        />
 
         <View style={styles.optionsRow}>
           <TouchableOpacity
@@ -135,12 +139,12 @@ export default function LoginScreen() {
           >
             <View style={[
               styles.checkbox,
-              { borderColor: rememberMe ? c.accent : c.textFaint },
-              rememberMe && { backgroundColor: c.accent },
+              { borderColor: rememberMe ? authChrome.onBlackFill : authChrome.inkFaint },
+              rememberMe && { backgroundColor: authChrome.onBlackFill },
             ]}>
-              {rememberMe && <Check color="#fff" size={14} strokeWidth={3} />}
+              {rememberMe && <Check color={authChrome.onBlackLabel} size={13} strokeWidth={3} />}
             </View>
-            <Text style={[styles.rememberText, { color: c.textSecondary }]}>Remember me</Text>
+            <Text style={styles.rememberText}>Remember me</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -149,83 +153,64 @@ export default function LoginScreen() {
             accessibilityRole="button"
             accessibilityLabel="Forgot password"
           >
-            <Text style={[styles.forgotText, { color: c.accent }]}>Forgot password?</Text>
+            <Text style={styles.forgotText}>Forgot password?</Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          style={[styles.loginButton, { backgroundColor: c.accent, opacity: loading ? 0.7 : 1 }]}
-          onPress={handleLogin}
-          disabled={loading}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityLabel="Sign in"
-        >
-          {loading ? (
-            <ButtonLoader color="#fff" />
-          ) : (
-            <Text style={styles.loginButtonText}>Sign In</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.linkButton}
+        <AuthButton label="Sign in" loading={loading} onPress={handleLogin} />
+        <AuthSwitch
+          prompt="New to ReLoop?"
+          action="Create account"
           onPress={() => router.push('/(auth)/register')}
-          accessibilityRole="link"
-          accessibilityLabel="Go to sign up"
-        >
-          <Text style={[styles.linkText, { color: c.accent }]}>Don't have an account? Sign Up</Text>
-        </TouchableOpacity>
+        />
       </View>
 
-      <View style={styles.footer}>
-        <Text style={[styles.footerText, { color: c.textFaint }]}>
-          By signing in, you agree to our Terms of Service
-        </Text>
-      </View>
+      <AuthFooter>
+        By signing in, you agree to our Terms of Service
+      </AuthFooter>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, justifyContent: 'center' },
-  header: { alignItems: 'center', marginTop: 20, marginBottom: 32 },
-  logoImage: { width: 100, height: 100, marginBottom: 16, borderRadius: 50 },
-  form: { width: '100%', maxWidth: 400, alignSelf: 'center', marginBottom: 20 },
-  label: { fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 18, letterSpacing: 0.2 },
-  input: {
-    padding: 16, borderRadius: RADIUS, fontSize: 16, borderWidth: 1,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03, shadowRadius: 4, elevation: 1,
+  container: {
+    flex: 1,
+    paddingHorizontal: 24,
+    backgroundColor: authChrome.canvas,
   },
-  inputRow: {
-    flexDirection: 'row', alignItems: 'center', borderRadius: RADIUS, borderWidth: 1,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03, shadowRadius: 4, elevation: 1,
+  body: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
   },
-  inputFlex: { flex: 1, padding: 16, fontSize: 16 },
-  eyeBtn: { paddingHorizontal: 14, paddingVertical: 16 },
   optionsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 18,
   },
-  rememberRow: { flexDirection: 'row', alignItems: 'center' },
+  rememberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   checkbox: {
-    width: 22, height: 22, borderRadius: 6,
-    borderWidth: 1.5, justifyContent: 'center', alignItems: 'center', marginRight: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
   },
-  rememberText: { fontSize: 13, fontWeight: '500' },
-  forgotText: { fontSize: 13, fontWeight: '700' },
-  loginButton: {
-    padding: 18, borderRadius: RADIUS, alignItems: 'center', marginTop: 30,
-    shadowColor: '#059669', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
+  rememberText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: authChrome.inkMuted,
   },
-  loginButtonText: { color: '#fff', fontSize: 17, fontWeight: '800', letterSpacing: 0.3 },
-  linkButton: { marginTop: 24, alignItems: 'center' },
-  linkText: { fontWeight: '600', fontSize: 14 },
-  footer: { paddingBottom: 20, alignItems: 'center' },
-  footerText: { fontSize: 11, fontWeight: '500' },
+  forgotText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: authChrome.ink,
+  },
 });
