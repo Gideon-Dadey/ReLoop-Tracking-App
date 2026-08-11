@@ -16,7 +16,12 @@ export class SyncService {
         if (event.type === TransactionType.ISSUE) {
           result = await this.containersService.issueByEmail(event.serialNumber, event.userEmail, userId);
         } else {
-          result = await this.containersService.returnByEmail(event.serialNumber, event.userEmail, userId);
+          result = await this.containersService.returnByEmail(
+            event.serialNumber,
+            event.userEmail,
+            userId,
+            event.collectionPointId,
+          );
         }
         results.push({ serialNumber: event.serialNumber, success: true, result });
       } catch (error) {

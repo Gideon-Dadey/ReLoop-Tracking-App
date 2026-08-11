@@ -4,10 +4,13 @@ import {
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, Flame, Users, Calendar } from 'lucide-react-native';
+import LikertScale from '@/components/surveys/LikertScale';
+import CardSurface from '@/components/CardSurface';
 import { useThemeColors } from '@/src/store/useThemeStore';
 import { screenHeader } from '@/src/theme/screenHeader';
 import { apiService } from '@/src/api/service';
 import { Skeleton } from '@/components/Skeleton';
+import { geist } from '@/src/theme/fonts';
 import {
   getQuestionForDate,
   getPulseVersion,
@@ -16,14 +19,6 @@ import {
 } from '@/src/data/dailyPulseQuestions';
 
 const RADIUS = 14;
-
-const LIKERT_OPTIONS = [
-  { value: 1, label: 'Strongly\nDisagree', emoji: '😟' },
-  { value: 2, label: 'Disagree', emoji: '🙁' },
-  { value: 3, label: 'Neutral', emoji: '😐' },
-  { value: 4, label: 'Agree', emoji: '🙂' },
-  { value: 5, label: 'Strongly\nAgree', emoji: '😊' },
-];
 
 export default function DailyPulsePanel() {
   const c = useThemeColors();
@@ -128,36 +123,13 @@ export default function DailyPulsePanel() {
         </View>
       </View>
 
-      <Text style={[styles.pulseEyebrow, { color: c.textFaint }]}>TODAY'S QUESTION</Text>
-      <Text style={[styles.questionText, { color: c.text, fontSize: isSmall ? 18 : 21 }]}>
-        {todayQuestion.text}
-      </Text>
-
-      <View style={styles.likertRow}>
-        {LIKERT_OPTIONS.map((opt) => {
-          const active = selected === opt.value;
-          return (
-            <TouchableOpacity
-              key={opt.value}
-              style={[
-                styles.likertBtn,
-                {
-                  backgroundColor: active ? c.accent + '20' : c.surface,
-                  borderColor: active ? c.accent : c.surfaceBorder,
-                  paddingVertical: isSmall ? 10 : 14,
-                },
-              ]}
-              onPress={() => setSelected(opt.value)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.likertEmoji, { fontSize: isSmall ? 18 : 22 }]}>{opt.emoji}</Text>
-              <Text style={[styles.likertLabel, { color: active ? c.accent : c.textMuted, fontSize: isSmall ? 8 : 10 }]}>
-                {opt.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      <CardSurface padded style={styles.questionCard}>
+        <Text style={[styles.pulseEyebrow, { color: c.textFaint }]}>TODAY'S QUESTION</Text>
+        <Text style={[styles.questionText, { color: c.text, fontSize: isSmall ? 17 : 19 }]}>
+          {todayQuestion.text}
+        </Text>
+        <LikertScale value={selected} onChange={setSelected} compact={isSmall} />
+      </CardSurface>
 
       <TouchableOpacity
         style={[styles.submitBtn, { backgroundColor: c.accent, opacity: selected && !submitMutation.isPending ? 1 : 0.5 }]}
@@ -183,20 +155,17 @@ export default function DailyPulsePanel() {
 const DAILY_PULSE_HINT = '21';
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 20, paddingTop: 8 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  container: { flex: 1, paddingHorizontal: 16, paddingTop: 8 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   categoryPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  categoryText: { fontSize: 12, fontWeight: '700' },
+  categoryText: { fontSize: 12, ...geist('700') },
   streakPill: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  streakPillText: { fontSize: 13, fontWeight: '600' },
-  pulseEyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 1.2, marginBottom: 10 },
-  questionText: { fontSize: 21, fontWeight: '600', lineHeight: 30, marginBottom: 28 },
-  likertRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 6 },
-  likertBtn: { flex: 1, alignItems: 'center', borderRadius: 12, borderWidth: 1.5, gap: 6 },
-  likertEmoji: { fontSize: 22 },
-  likertLabel: { fontSize: 10, textAlign: 'center', fontWeight: '500' },
-  submitBtn: { marginTop: 28, paddingVertical: 16, borderRadius: RADIUS, alignItems: 'center' },
-  submitText: { fontSize: 16, fontWeight: '600' },
+  streakPillText: { fontSize: 13, ...geist('600') },
+  questionCard: { marginBottom: 4 },
+  pulseEyebrow: { fontSize: 11, letterSpacing: 1.2, marginBottom: 10, ...geist('700') },
+  questionText: { fontSize: 19, lineHeight: 27, marginBottom: 22, ...geist('600') },
+  submitBtn: { marginTop: 20, paddingVertical: 16, borderRadius: RADIUS, alignItems: 'center' },
+  submitText: { fontSize: 16, ...geist('600') },
   hint: { fontSize: 12, textAlign: 'center', marginTop: 14, lineHeight: 18 },
   errorText: { color: '#EF4444', fontSize: 13, textAlign: 'center', marginTop: 12 },
   completedContent: { padding: 20, paddingBottom: 40 },

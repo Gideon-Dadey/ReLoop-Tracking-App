@@ -8,12 +8,14 @@ import { useThemeColors } from '@/src/store/useThemeStore';
 import { screenHeader } from '@/src/theme/screenHeader';
 import { useNotificationStore } from '@/src/store/useNotificationStore';
 import { apiService } from '@/src/api/service';
-import { ScanLine, RotateCcw, HelpCircle, CheckCircle2, AlertCircle, Camera as CameraIcon, ArrowRight } from 'lucide-react-native';
+import { ScanLine, RotateCcw, HelpCircle, CheckCircle2, AlertCircle, Camera as CameraIcon, ArrowRight, MapPin } from 'lucide-react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { useNotifications } from '@/src/hooks/useNotifications';
 import { syncAfterContainerReturn } from '@/src/lib/userStats';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { parseScanPayload } from '@/src/lib/parseScanPayload';
+import { useCollectionStore } from '@/src/store/useCollectionStore';
 
 const RADIUS = 14;
 
@@ -35,6 +37,11 @@ export default function ScannerScreen() {
   const { showLocalNotification } = useNotifications();
   const { addNotification } = useNotificationStore();
   const router = useRouter();
+  const { resume } = useLocalSearchParams<{ resume?: string }>();
+  const selectedBase = useCollectionStore((s) => s.selectedBase);
+  const setSelectedBase = useCollectionStore((s) => s.setSelectedBase);
+  const setPendingSerial = useCollectionStore((s) => s.setPendingSerial);
+  const clearPendingSerial = useCollectionStore((s) => s.clearPendingSerial);
 
   useEffect(() => {
     (async () => {
@@ -47,21 +54,67 @@ export default function ScannerScreen() {
     stepRef.current = step;
   }, [step]);
 
+  useEffect(() => {
+    if (resume !== '1') return;
+    const serial = useCollectionStore.getState().pendingSerial;
+    if (!serial) return;
+    setActiveBarcode(serial);
+    setScanned(true);
+    isScanning.current = true;
+    setStep('PHOTO');
+  }, [resume]);
+
+  const unlockScanner = () => {
+    setScanned(false);
+    isScanning.current = false;
+  };
+
   const handleBarCodeScanned = async ({ data }: { data?: string | null }) => {
     if (isScanning.current) return;
     if (stepRef.current !== 'SCAN') return;
 
-    const code = (data ?? '').toString().trim();
-    if (!code) return;
-    
+    const raw = (data ?? '').toString().trim();
+    if (!raw) return;
+
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 
-    setActiveBarcode(code);
-    setScanned(true);
     isScanning.current = true;
-    setStep('PHOTO'); 
+    setScanned(true);
+
+    const payload = parseScanPayload(raw);
+
+    if (payload.kind === 'collection') {
+      try {
+        const base = await apiService.getVendorByCode(payload.code);
+        setSelectedBase(base);
+        unlockScanner();
+        router.push(`/collection/${base._id}` as any);
+      } catch (error: any) {
+        unlockScanner();
+        Alert.alert('Unknown collection QR', error.message || 'This code is not a ReLoop collection base.');
+      }
+      return;
+    }
+
+    if (payload.kind !== 'container') {
+      unlockScanner();
+      Alert.alert('Unrecognized code', 'Scan a ReLoop container or a collection-base QR.');
+      return;
+    }
+
+    const base = useCollectionStore.getState().selectedBase;
+    setPendingSerial(payload.serialNumber);
+    setActiveBarcode(payload.serialNumber);
+
+    if (!base) {
+      unlockScanner();
+      router.push('/collection' as any);
+      return;
+    }
+
+    setStep('PHOTO');
   };
 
   const captureAndVerify = async () => {
@@ -78,7 +131,8 @@ export default function ScannerScreen() {
       }
 
       const userEmail = user?.email || '';
-      const result = await apiService.returnContainer(activeBarcode!, userEmail);
+      const collectionPointId = useCollectionStore.getState().selectedBase?._id;
+      const result = await apiService.returnContainer(activeBarcode!, userEmail, collectionPointId);
 
       const userId = user?.id;
       if (!userId) {
@@ -100,8 +154,14 @@ export default function ScannerScreen() {
         type: 'SUCCESS',
       });
 
-      Alert.alert('Success! 🎉', `Container verified as clean.\n+${pointsEarned} points earned!`);
-
+      const baseName = useCollectionStore.getState().selectedBase?.name;
+      Alert.alert(
+        'Returned',
+        baseName
+          ? `Verified clean at ${baseName}.\n+${pointsEarned} points earned.`
+          : `Container verified as clean.\n+${pointsEarned} points earned.`,
+      );
+      clearPendingSerial();
       resetScanner();
     } catch (error: any) {
       if (Platform.OS !== 'web') {
@@ -208,12 +268,32 @@ export default function ScannerScreen() {
         </View>
       )}
 
+      {step === 'SCAN' && selectedBase ? (
+        <TouchableOpacity
+          style={styles.baseChip}
+          onPress={() => router.push('/collection' as any)}
+          activeOpacity={0.85}
+        >
+          <MapPin color="#fff" size={14} />
+          <Text style={styles.baseChipText} numberOfLines={1}>
+            {selectedBase.name}
+          </Text>
+          <Text style={styles.baseChipChange}>Change</Text>
+        </TouchableOpacity>
+      ) : null}
+
       {/* Default Scanner Overlay */}
       {step === 'SCAN' && (
         <View style={styles.overlay} pointerEvents="none">
           <View style={styles.topBar}>
-            <Text style={[screenHeader.title, styles.topTitle]}>Scan Container</Text>
-            <Text style={styles.topSub}>Point at a ReLoop QR code</Text>
+            <Text style={[screenHeader.title, styles.topTitle]}>
+              {selectedBase ? 'Scan container' : 'Scan QR'}
+            </Text>
+            <Text style={styles.topSub}>
+              {selectedBase
+                ? 'Point at the container code to return it here'
+                : 'Collection base or container QR'}
+            </Text>
           </View>
 
           <View style={styles.scanFrame}>
@@ -242,6 +322,22 @@ const styles = StyleSheet.create({
   backBtn: { marginTop: 20, padding: 12 },
 
   overlay: { flex: 1, justifyContent: 'space-between', alignItems: 'center' },
+  baseChip: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 118 : 98,
+    alignSelf: 'center',
+    zIndex: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    maxWidth: '86%',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: 'rgba(0,0,0,0.62)',
+  },
+  baseChipText: { color: '#fff', fontSize: 13, fontWeight: '600', flexShrink: 1 },
+  baseChipChange: { color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: '600' },
   topBar: { paddingTop: Platform.OS === 'ios' ? 70 : 50, alignItems: 'center' },
   topTitle: { color: '#fff' },
   topSub: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 4 },

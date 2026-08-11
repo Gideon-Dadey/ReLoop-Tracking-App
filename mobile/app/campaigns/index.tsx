@@ -4,7 +4,8 @@ import {
   StyleSheet, RefreshControl, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { router, Stack } from 'expo-router';
+import { router } from 'expo-router';
+import PinnedScreenHeader from '@/components/PinnedScreenHeader';
 import { Plus, X, Link2, Sparkles, Share2, CheckCircle2 } from 'lucide-react-native';
 import { useThemeColors } from '@/src/store/useThemeStore';
 import { apiService, Campaign, CampaignPlatform } from '@/src/api/service';
@@ -84,7 +85,7 @@ export default function CampaignsScreen() {
   if (isLoading) {
     return (
       <View style={[styles.container, { backgroundColor: c.bg }]}>
-        <Stack.Screen options={{ title: 'Campaigns' }} />
+        <PinnedScreenHeader showBack title="Campaigns" />
         {[1, 2, 3, 4].map((i) => (
           <View key={i} style={{ padding: 16 }}>
             <Skeleton width="100%" height={80} borderRadius={RADIUS} />
@@ -96,7 +97,7 @@ export default function CampaignsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>
-      <Stack.Screen options={{ title: 'Campaigns' }} />
+      <PinnedScreenHeader showBack title="Campaigns" />
 
       <FlatList
         data={data?.campaigns || []}

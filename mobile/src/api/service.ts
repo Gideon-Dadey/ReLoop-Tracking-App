@@ -50,6 +50,7 @@ export interface Transaction {
   _id: string;
   type: 'ISSUE' | 'RETURN';
   containerId?: { serialNumber: string };
+  organizationId?: { name?: string; group?: string };
   pointsAwarded?: number;
   createdAt: string;
 }
@@ -57,9 +58,13 @@ export interface Transaction {
 export interface Vendor {
   _id: string;
   name: string;
+  slug?: string;
+  group?: string;
+  hours?: string;
   acceptedMaterials?: string[];
   location: { lat: number; lng: number; address: string };
-  settings?: { pointsPerReturn?: number };
+  settings?: { pointsPerReturn?: number; plasticSavedPerUnit?: number; co2SavedPerUnit?: number };
+  distanceKm?: number;
 }
 
 export interface Reward {
@@ -94,6 +99,7 @@ export interface SyncEvent {
   type: 'ISSUE' | 'RETURN';
   userEmail: string;
   timestamp: string;
+  collectionPointId?: string;
 }
 
 export interface SyncResult {
@@ -315,11 +321,13 @@ export const apiService = {
   returnContainer: async (
     serialNumber: string,
     userEmail: string,
+    collectionPointId?: string,
   ): Promise<ReturnResult> => {
     try {
       const { data } = await apiClient.post('/containers/return', {
         serialNumber,
         userEmail,
+        ...(collectionPointId ? { collectionPointId } : {}),
       });
       return data;
     } catch (error: any) {
@@ -395,6 +403,39 @@ export const apiService = {
       throw new Error(
         error.response?.data?.message || 'Failed to fetch vendors',
       );
+    }
+  },
+
+  getVendor: async (id: string): Promise<Vendor> => {
+    try {
+      const { data } = await apiClient.get(`/vendors/${id}`);
+      return data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Collection base not found');
+    }
+  },
+
+  getVendorByCode: async (code: string): Promise<Vendor> => {
+    try {
+      const { data } = await apiClient.get(`/vendors/code/${encodeURIComponent(code)}`);
+      return data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Collection base not found');
+    }
+  },
+
+  getNearbyVendors: async (
+    lat: number,
+    lng: number,
+    opts?: { limit?: number; group?: string },
+  ): Promise<Vendor[]> => {
+    try {
+      const { data } = await apiClient.get('/vendors/nearby', {
+        params: { lat, lng, limit: opts?.limit ?? 25, group: opts?.group },
+      });
+      return data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch nearby collection bases');
     }
   },
 

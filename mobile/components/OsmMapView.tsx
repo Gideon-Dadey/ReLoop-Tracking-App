@@ -88,6 +88,12 @@ function buildMapHtml(
     }).addTo(map);
     ` : ''}
 
+    if (markers.length > 1) {
+      const bounds = L.latLngBounds(markers.map(m => [m.lat, m.lng]));
+      ${userLat != null && userLng != null ? `bounds.extend([${userLat}, ${userLng}]);` : ''}
+      map.fitBounds(bounds, { padding: [48, 48], maxZoom: 13 });
+    }
+
     window.centerOnUser = function(lat, lng) {
       map.flyTo([lat, lng], 15, { duration: 1 });
     };

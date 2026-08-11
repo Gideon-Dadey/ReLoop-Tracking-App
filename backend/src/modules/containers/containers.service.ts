@@ -83,7 +83,7 @@ export class ContainersService {
     };
   }
 
-  async return(serialNumber: string, userId: string, vendorId: string) {
+  async return(serialNumber: string, userId: string, vendorId: string, collectionPointId?: string) {
     let container = await this.containerModel.findOne({ serialNumber });
 
     if (!container) {
@@ -110,18 +110,29 @@ export class ContainersService {
     const user = await this.userModel.findById(userId);
     if (!user) throw new NotFoundException('User not found');
 
-    // Default impact values if no org
-    let plasticSaved = 0.05;
-    let co2Saved = 0.1;
-    let points = 10;
+    // Prefer the scanned collection base; fall back to the container's home org.
+    let dropOff = collectionPointId
+      ? await this.orgModel.findById(collectionPointId)
+      : null;
+    if (collectionPointId && !dropOff) {
+      throw new NotFoundException('Collection base not found');
+    }
+    if (!dropOff && container.organizationId) {
+      dropOff = await this.orgModel.findById(container.organizationId);
+    }
 
-    if (container.organizationId) {
-      const org = await this.orgModel.findById(container.organizationId);
-      if (org) {
-        plasticSaved = org.settings?.plasticSavedPerUnit ?? 0.05;
-        co2Saved = org.settings?.co2SavedPerUnit ?? 0.1;
-        points = org.settings?.pointsPerReturn ?? 10;
-      }
+    let plasticSaved = dropOff?.settings?.plasticSavedPerUnit ?? 0.05;
+    let co2Saved = dropOff?.settings?.co2SavedPerUnit ?? 0.1;
+    let points = dropOff?.settings?.pointsPerReturn ?? 10;
+
+    if (dropOff) {
+      container.organizationId = dropOff._id as Types.ObjectId;
+      dropOff.analytics = {
+        totalContainersIssued: dropOff.analytics?.totalContainersIssued ?? 0,
+        totalReturns: (dropOff.analytics?.totalReturns ?? 0) + 1,
+      };
+      dropOff.markModified('analytics');
+      await dropOff.save();
     }
 
     // Update container
@@ -168,7 +179,7 @@ export class ContainersService {
       streakBonus,
       plasticSaved,
       co2Saved,
-      organizationId: container.organizationId || null,
+      organizationId: dropOff?._id || container.organizationId || null,
       signature: `SIG_RET_${Date.now()}_${serialNumber}`,
     });
     await transaction.save();
@@ -207,10 +218,15 @@ export class ContainersService {
     return this.issue(serialNumber, user._id.toString(), requesterId);
   }
 
-  async returnByEmail(serialNumber: string, userEmail: string, requesterId: string) {
+  async returnByEmail(
+    serialNumber: string,
+    userEmail: string,
+    requesterId: string,
+    collectionPointId?: string,
+  ) {
     const user = await this.userModel.findOne({ email: userEmail });
     if (!user) throw new NotFoundException('User not found');
-    return this.return(serialNumber, user._id.toString(), requesterId);
+    return this.return(serialNumber, user._id.toString(), requesterId, collectionPointId);
   }
 
   async seed(serialNumber: string, type: string) {
@@ -225,6 +241,7 @@ export class ContainersService {
       .sort({ createdAt: -1 })
       .populate('containerId', 'serialNumber type')
       .populate('vendorId', 'userName email')
+      .populate('organizationId', 'name group slug location')
       .exec();
   }
 

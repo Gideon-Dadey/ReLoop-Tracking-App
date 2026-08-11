@@ -3,7 +3,8 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Stack, useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
+import PinnedScreenHeader from '@/components/PinnedScreenHeader';
 import { ExternalLink, CheckCircle, Star } from 'lucide-react-native';
 import { useThemeColors } from '@/src/store/useThemeStore';
 import { apiService, EvaluateCampaignPayload, CampaignPlatform } from '@/src/api/service';
@@ -73,7 +74,7 @@ export default function CampaignDetailScreen() {
   if (isLoading || !campaign) {
     return (
       <View style={[styles.container, { backgroundColor: c.bg }]}>
-        <Stack.Screen options={{ title: 'Campaign' }} />
+        <PinnedScreenHeader showBack title="Campaign" />
         <View style={{ padding: 20, gap: 16 }}>
           <Skeleton width="100%" height={24} borderRadius={8} />
           <Skeleton width="70%" height={16} borderRadius={8} />
@@ -86,8 +87,9 @@ export default function CampaignDetailScreen() {
   const allScored = Object.values(scores).every((v) => v >= 1);
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: c.bg }]} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: campaign.title }} />
+    <View style={[styles.container, { backgroundColor: c.bg }]}>
+      <PinnedScreenHeader showBack title={campaign.title} />
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
 
       <View style={[styles.section, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
         <View style={styles.titleRow}>
@@ -189,6 +191,7 @@ export default function CampaignDetailScreen() {
         </View>
       )}
     </ScrollView>
+    </View>
   );
 }
 

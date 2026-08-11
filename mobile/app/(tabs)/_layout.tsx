@@ -76,16 +76,17 @@ export default function TabLayout() {
         tabBarLabelStyle: TAB_LABEL_STYLE,
         tabBarStyle: {
           backgroundColor: c.tabBg,
-          borderTopWidth: 0,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: c.tabBorder,
           height: tabBarHeight,
-          paddingTop: 6,
+          paddingTop: 4,
           paddingBottom: bottomInset,
-          paddingHorizontal: 4,
+          paddingHorizontal: 0,
           elevation: 0,
           overflow: 'visible',
         },
         tabBarItemStyle: {
-          paddingVertical: 2,
+          paddingVertical: 0,
         },
       }}>
       <Tabs.Screen

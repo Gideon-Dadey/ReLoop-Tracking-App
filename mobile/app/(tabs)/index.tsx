@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
-  StyleSheet, Text, View, ScrollView, Platform, TouchableOpacity,
-  useWindowDimensions, RefreshControl,
+  StyleSheet, Text, View, ScrollView, Platform, TouchableOpacity, Pressable,
+  useWindowDimensions, RefreshControl, Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '@/src/store/useAuthStore';
@@ -183,6 +183,17 @@ export default function Dashboard() {
   const openProfileDrawer = useCallback(() => setProfileDrawerVisible(true), []);
   const closeProfileDrawer = useCallback(() => setProfileDrawerVisible(false), []);
   const goToProfile = useCallback(() => router.push('/profile'), [router]);
+  const pageShift = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.spring(pageShift, {
+      toValue: profileDrawerVisible ? -36 : 0,
+      useNativeDriver: true,
+      damping: 28,
+      stiffness: 240,
+      mass: 0.9,
+    }).start();
+  }, [profileDrawerVisible, pageShift]);
   const goToScanner = useCallback(() => { triggerHaptic(); router.push('/scanner'); }, [triggerHaptic, router]);
   const goToCommunity = useCallback(() => router.push('/community'), [router]);
   const goToGuide = useCallback(() => router.push('/guide'), [router]);
@@ -319,15 +330,16 @@ export default function Dashboard() {
 
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>
+      <Animated.View style={{ flex: 1, transform: [{ translateX: pageShift }] }}>
       {/* Pinned top bar — native pattern: greeting stays fixed while content scrolls */}
       <PinnedScreenHeader backgroundColor={c.bg} horizontalPadding={0}>
         <View style={[styles.headerRow, { paddingHorizontal: PADDING }]}>
-          <TouchableOpacity
-            style={styles.headerLead}
+          <Pressable
+            style={({ pressed }) => [styles.headerLead, pressed && styles.headerLeadPressed]}
             onPress={goToProfile}
-            activeOpacity={0.82}
+            android_ripple={null}
             accessibilityRole="button"
-            accessibilityLabel="Open profile"
+            accessibilityLabel="Open settings"
           >
             <UserAvatar
               name={displayUser?.userName}
@@ -343,7 +355,7 @@ export default function Dashboard() {
                 Tap to manage your profile
               </Text>
             </View>
-          </TouchableOpacity>
+          </Pressable>
           <View style={styles.headerActions}>
             <TouchableOpacity
               onPress={openNotifications}
@@ -382,7 +394,7 @@ export default function Dashboard() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.accent} />
         }
       >
-        <View style={{ backgroundColor: c.bg, flex: 1, paddingBottom: 60, minHeight: windowHeight * 0.7 }}>
+        <View style={{ backgroundColor: c.bg, flex: 1, paddingBottom: 16, minHeight: windowHeight * 0.7 }}>
           <View style={{ paddingHorizontal: PADDING, marginTop: 4 }}>
             <ImpactHeroCard
               score={impactScore}
@@ -653,6 +665,7 @@ export default function Dashboard() {
           <View style={{ height: 120 }} />
         </View>
       </ScrollView>
+      </Animated.View>
 
       {/* Sync Status */}
       {queueCount > 0 && (
@@ -675,10 +688,8 @@ export default function Dashboard() {
         visible={profileDrawerVisible}
         onClose={closeProfileDrawer}
         impactScore={impactScore}
-        points={points}
         streakCount={displayUser?.streakCount ?? 0}
         totalReturns={displayUser?.impact?.totalReturns ?? 0}
-        plasticSaved={parseFloat(plasticSaved) || 0}
       />
     </View>
   );
@@ -690,6 +701,7 @@ const styles = StyleSheet.create({
   scrollContent: { paddingHorizontal: 0 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   headerLead: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, marginRight: 8 },
+  headerLeadPressed: { opacity: 0.82 },
   headerTextBlock: { flex: 1, minWidth: 0 },
   greeting: { fontSize: 18, fontWeight: '700', letterSpacing: -0.35 },
   headerMeta: { fontSize: 11, marginTop: 2 },

@@ -1,4 +1,4 @@
-import { IsArray, IsNotEmpty, IsString, IsEnum, ValidateNested } from 'class-validator';
+import { IsArray, IsMongoId, IsNotEmpty, IsOptional, IsString, IsEnum, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { TransactionType } from '../../transactions/schemas/transaction.schema';
@@ -22,6 +22,11 @@ export class ScanEventDto {
   @IsNotEmpty()
   @ApiProperty()
   timestamp: string; // ISO format
+
+  @IsOptional()
+  @IsMongoId()
+  @ApiProperty({ required: false })
+  collectionPointId?: string;
 }
 
 export class SyncBulkDto {

@@ -26,6 +26,18 @@ export class Organization extends Document {
     address: string;
   };
 
+  /** Partner network — nearest alternatives stay in the same group. */
+  @Prop({ index: true })
+  group?: string;
+
+  /** Printed QR target: reloop://collection/{slug} */
+  @Prop({ unique: true, sparse: true, lowercase: true, trim: true })
+  slug?: string;
+
+  /** Visitor hours, e.g. Mon–Sat 8am–4pm */
+  @Prop()
+  hours?: string;
+
   @Prop({ type: Object, default: { totalContainersIssued: 0, totalReturns: 0 } })
   analytics: {
     totalContainersIssued: number;

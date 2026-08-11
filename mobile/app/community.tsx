@@ -5,9 +5,9 @@ import { apiService } from '@/src/api/service';
 import type { LeaderboardEntry } from '@/src/api/service';
 import { useQuery } from '@tanstack/react-query';
 import { 
-  Users, Leaf, TrendingUp, Globe, ArrowLeft, Trophy,
+  Users, Leaf, TrendingUp, Globe, Trophy,
 } from 'lucide-react-native';
-import { useRouter, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
 import PinnedScreenHeader from '@/components/PinnedScreenHeader';
 import { screenHeader } from '@/src/theme/screenHeader';
 import UserAvatar from '@/components/UserAvatar';
@@ -17,7 +17,6 @@ const PADDING = 16;
 
 export default function CommunityScreen() {
   const c = useThemeColors();
-  const router = useRouter();
 
   const { data: stats, isFetching: isFetchingStats, refetch: refetchStats } = useQuery({
     queryKey: ['community-stats'],
@@ -110,17 +109,7 @@ export default function CommunityScreen() {
     <View style={[styles.container, { backgroundColor: c.bg }]}>
       <Stack.Screen options={{ headerShown: false }} />
       
-      <PinnedScreenHeader
-        left={
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={[styles.backBtn, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}
-          >
-            <ArrowLeft color={c.text} size={22} />
-          </TouchableOpacity>
-        }
-        title="Eco Network"
-      />
+      <PinnedScreenHeader showBack title="Eco Network" />
 
       <FlatList
         data={leaderboard}
@@ -146,14 +135,6 @@ export default function CommunityScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  backBtn: {
-     width: 44,
-     height: 44,
-     borderRadius: 22,
-     borderWidth: 1,
-     justifyContent: 'center',
-     alignItems: 'center',
-  },
   communityHeader: { paddingHorizontal: PADDING, marginBottom: 24, marginTop: 10 },
   statsGrid: { flexDirection: 'row', gap: PADDING, marginBottom: 32 },
   statItem: { 

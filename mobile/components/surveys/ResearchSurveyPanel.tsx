@@ -10,6 +10,8 @@ import { useThemeColors } from '@/src/store/useThemeStore';
 import { screenHeader } from '@/src/theme/screenHeader';
 import { apiService, SurveyAnswer } from '@/src/api/service';
 import { Skeleton } from '@/components/Skeleton';
+import LikertScale from '@/components/surveys/LikertScale';
+import CardSurface from '@/components/CardSurface';
 
 const RADIUS = 14;
 const SURVEY_VERSION = '1.0';
@@ -25,14 +27,6 @@ const QUESTIONS = [
   { id: 8, section: 'B', text: 'I believe our community can create meaningful change in waste reduction' },
   { id: 9, section: 'B', text: 'Social media campaigns have helped me understand the circular economy' },
   { id: 10, section: 'B', text: 'I feel motivated to advocate for systemic changes in packaging practices' },
-];
-
-const LIKERT_OPTIONS = [
-  { value: 1, label: 'Strongly\nDisagree', emoji: '😟' },
-  { value: 2, label: 'Disagree', emoji: '🙁' },
-  { value: 3, label: 'Neutral', emoji: '😐' },
-  { value: 4, label: 'Agree', emoji: '🙂' },
-  { value: 5, label: 'Strongly\nAgree', emoji: '😊' },
 ];
 
 const SECTION_INFO = {
@@ -205,30 +199,30 @@ export default function ResearchSurveyPanel() {
     return (
       <ScrollView style={[styles.container, { backgroundColor: c.bg }]} contentContainerStyle={styles.introContent}>
 
-        <View style={[styles.introHero, { backgroundColor: c.accent + '14', borderColor: c.accent + '30' }]}>
-          <Text style={[styles.introEyebrow, { color: c.accent }]}>RESEARCH SURVEY</Text>
-          <Text style={[styles.introTitle, { color: c.text }]}>Community Survey</Text>
-          <Text style={[styles.introDesc, { color: c.textSecondary }]}>
+        <CardSurface padded style={styles.introHero}>
+          <Text style={[styles.introEyebrow, { color: c.textFaint }]}>RESEARCH SURVEY</Text>
+          <Text style={[styles.introTitle, { color: c.heading }]}>Community Survey</Text>
+          <Text style={[styles.introDesc, { color: c.textMuted }]}>
             Help us understand how zero-waste social media campaigns influence real-world behavior and community connection.
           </Text>
-        </View>
+        </CardSurface>
 
         <View style={styles.introMetaRow}>
-          <View style={[styles.introMetaCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-            <Clock size={18} color={c.accent} />
-            <Text style={[styles.introMetaValue, { color: c.text }]}>~3 min</Text>
+          <CardSurface style={styles.introMetaCard}>
+            <Clock size={18} color={c.text} />
+            <Text style={[styles.introMetaValue, { color: c.heading }]}>~3 min</Text>
             <Text style={[styles.introMetaLabel, { color: c.textMuted }]}>Duration</Text>
-          </View>
-          <View style={[styles.introMetaCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-            <BarChart3 size={18} color={SECTION_INFO.A.color} />
-            <Text style={[styles.introMetaValue, { color: c.text }]}>10</Text>
+          </CardSurface>
+          <CardSurface style={styles.introMetaCard}>
+            <BarChart3 size={18} color={c.text} />
+            <Text style={[styles.introMetaValue, { color: c.heading }]}>10</Text>
             <Text style={[styles.introMetaLabel, { color: c.textMuted }]}>Questions</Text>
-          </View>
-          <View style={[styles.introMetaCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-            <Shield size={18} color={SECTION_INFO.B.color} />
-            <Text style={[styles.introMetaValue, { color: c.text }]}>Private</Text>
+          </CardSurface>
+          <CardSurface style={styles.introMetaCard}>
+            <Shield size={18} color={c.text} />
+            <Text style={[styles.introMetaValue, { color: c.heading }]}>Private</Text>
             <Text style={[styles.introMetaLabel, { color: c.textMuted }]}>Anonymous</Text>
-          </View>
+          </CardSurface>
         </View>
 
         <Text style={[styles.introSectionLabel, { color: c.textFaint }]}>TWO SECTIONS</Text>
@@ -329,27 +323,10 @@ export default function ResearchSurveyPanel() {
       </View>
 
       <Animated.View style={[styles.questionContainer, { opacity: fadeAnim }]}>
-        <Text style={[styles.questionText, { color: c.text, fontSize: isSmall ? 17 : 20 }]}>{question.text}</Text>
-
-        <View style={styles.likertRow}>
-          {LIKERT_OPTIONS.map((opt) => {
-            const selected = answers[question.id] === opt.value;
-            return (
-              <TouchableOpacity
-                key={opt.value}
-                style={[
-                  styles.likertBtn,
-                  { backgroundColor: selected ? c.accent + '20' : c.surface, borderColor: selected ? c.accent : c.surfaceBorder, paddingVertical: isSmall ? 10 : 14 },
-                ]}
-                onPress={() => handleSelect(opt.value)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.likertEmoji, { fontSize: isSmall ? 18 : 22 }]}>{opt.emoji}</Text>
-                <Text style={[styles.likertLabel, { color: selected ? c.accent : c.textMuted, fontSize: isSmall ? 8 : 10 }]}>{opt.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        <CardSurface padded>
+          <Text style={[styles.questionText, { color: c.text, fontSize: isSmall ? 16 : 18 }]}>{question.text}</Text>
+          <LikertScale value={answers[question.id]} onChange={handleSelect} compact={isSmall} />
+        </CardSurface>
       </Animated.View>
 
       <View style={styles.footer}>
@@ -405,13 +382,13 @@ export default function ResearchSurveyPanel() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  introContent: { padding: 20, paddingBottom: 40 },
-  introHero: { borderRadius: RADIUS, borderWidth: 1, padding: 20, marginBottom: 16 },
+  introContent: { padding: 16, paddingBottom: 40 },
+  introHero: { marginBottom: 16 },
   introEyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 1.2, marginBottom: 8 },
-  introTitle: { fontSize: 24, fontWeight: '700', letterSpacing: -0.4, marginBottom: 8 },
+  introTitle: { fontSize: 22, fontWeight: '700', letterSpacing: -0.4, marginBottom: 8 },
   introDesc: { fontSize: 14, lineHeight: 21 },
   introMetaRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-  introMetaCard: { flex: 1, borderRadius: 12, borderWidth: 1, padding: 12, alignItems: 'center', gap: 4 },
+  introMetaCard: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 12, paddingHorizontal: 8 },
   introMetaValue: { fontSize: 15, fontWeight: '700' },
   introMetaLabel: { fontSize: 10, fontWeight: '500' },
   introSectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 10 },
@@ -440,12 +417,8 @@ const styles = StyleSheet.create({
   progressText: { fontSize: 12 },
   sectionLabel: { paddingHorizontal: 20, paddingTop: 10 },
   sectionText: { fontSize: 12, fontWeight: '500' },
-  questionContainer: { flex: 1, justifyContent: 'center', paddingHorizontal: 20 },
-  questionText: { fontSize: 20, fontWeight: '600', lineHeight: 28, textAlign: 'center', marginBottom: 36 },
-  likertRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 6 },
-  likertBtn: { flex: 1, alignItems: 'center', paddingVertical: 14, borderRadius: 12, borderWidth: 1.5, gap: 6 },
-  likertEmoji: { fontSize: 22 },
-  likertLabel: { fontSize: 10, textAlign: 'center', fontWeight: '500' },
+  questionContainer: { flex: 1, justifyContent: 'center', paddingHorizontal: 16 },
+  questionText: { fontSize: 18, fontWeight: '600', lineHeight: 26, textAlign: 'center', marginBottom: 22 },
   footer: { paddingHorizontal: 20, paddingBottom: 32 },
   navRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
   navBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 14, paddingHorizontal: 20, borderRadius: RADIUS, borderWidth: 1 },

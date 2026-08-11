@@ -1,51 +1,90 @@
-import React, { useState, useCallback } from 'react';
-import { StyleSheet, Text, View, FlatList, Platform, RefreshControl, TouchableOpacity } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import {
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Package,
+  QrCode,
+  Search,
+  X,
+} from 'lucide-react-native';
 import { InventorySkeleton } from '@/components/Skeleton';
-import { useThemeColors } from '@/src/store/useThemeStore';
+import PinnedScreenHeader from '@/components/PinnedScreenHeader';
+import CardSurface from '@/components/CardSurface';
+import StatusBadge from '@/components/StatusBadge';
+import { useThemeColors, useThemeStore } from '@/src/store/useThemeStore';
+import { useAuthStore } from '@/src/store/useAuthStore';
 import { apiService } from '@/src/api/service';
 import type { Container, Transaction } from '@/src/api/service';
-import { useQuery } from '@tanstack/react-query';
-import { 
-  Package, ArrowUpRight, ArrowDownLeft, 
-  ChevronRight, MapPin, Search, History as HistoryIcon, 
-  ArrowLeft, ArrowRight, ClipboardList, Info
-} from 'lucide-react-native';
-import { useRouter } from 'expo-router';
-import PinnedScreenHeader from '@/components/PinnedScreenHeader';
-import { screenHeader } from '@/src/theme/screenHeader';
-import { useAuthStore } from '@/src/store/useAuthStore';
 import { queryKeys } from '@/src/lib/queryKeys';
-import StatusBadge from '@/components/StatusBadge';
+import { homeWell } from '@/src/theme/chrome';
+import { geist } from '@/src/theme/fonts';
+import type { StatusKind } from '@/components/StatusBadge';
 
-const RADIUS = 14;
-const PADDING = 16;
+type Segment = 'borrows' | 'history';
 
-const BarcodeGraphic = ({ color, opacity = 0.5 }: { color: string, opacity?: number }) => (
-  <View style={styles.barcodeContainer}>
-    {[2, 7, 3, 5, 2, 8, 4, 1, 6, 3, 7, 2, 5, 3, 8, 2].map((h, i) => (
-      <View 
-        key={i} 
-        style={[
-          styles.barcodeStrip, 
-          { 
-            height: 14 + h, 
-            width: i % 3 === 0 ? 2.5 : 1, 
-            backgroundColor: color,
-            opacity: i % 4 === 0 ? 1 : opacity 
-          }
-        ]} 
-      />
-    ))}
-  </View>
-);
+const LOAN_DAYS = 14;
 
-export default function HistoryScreen() {
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+}
+
+function dayLabel(iso: string) {
+  const date = new Date(iso);
+  const diff = Math.round((startOfDay(new Date()) - startOfDay(date)) / 86_400_000);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Yesterday';
+  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function formatTime(iso: string) {
+  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+function dueState(updatedAt?: string): { label: string; kind: StatusKind; urgent: boolean } {
+  const issued = new Date(updatedAt || Date.now());
+  const due = new Date(issued);
+  due.setDate(due.getDate() + LOAN_DAYS);
+  const days = Math.ceil((due.getTime() - Date.now()) / 86_400_000);
+  if (days < 0) return { label: `${Math.abs(days)}d overdue`, kind: 'failed', urgent: true };
+  if (days === 0) return { label: 'Due today', kind: 'failed', urgent: true };
+  if (days <= 2) return { label: `${days}d left`, kind: 'pending', urgent: true };
+  return { label: `${days}d left`, kind: 'other', urgent: false };
+}
+
+function matchesQuery(haystacks: Array<string | undefined>, query: string) {
+  if (!query) return true;
+  return haystacks.some((value) => value?.toLowerCase().includes(query));
+}
+
+export default function ActivityScreen() {
   const c = useThemeColors();
+  const mode = useThemeStore((s) => s.mode);
   const router = useRouter();
   const userId = useAuthStore((s) => s.user?.id);
-  const [activeSegment, setActiveSegment] = useState<'borrows' | 'history'>('borrows');
+  const [segment, setSegment] = useState<Segment>('borrows');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const borrowWell = homeWell(mode, 'activity');
+  const returnWell = homeWell(mode, 'deposit');
+  const urgentWell = homeWell(mode, 'withdraw');
 
-  const { data: activeBorrows = [], isFetching: isFetchingActive, isLoading: isLoadingActive, refetch: refetchActive } = useQuery({
+  const {
+    data: activeBorrows = [],
+    isFetching: fetchingBorrows,
+    isLoading: loadingBorrows,
+    refetch: refetchBorrows,
+  } = useQuery({
     queryKey: queryKeys.activeBorrows(userId ?? ''),
     queryFn: () => apiService.getActiveBorrows(),
     enabled: !!userId,
@@ -53,7 +92,12 @@ export default function HistoryScreen() {
     refetchOnMount: 'always' as const,
   });
 
-  const { data: history = [], isFetching: isFetchingHistory, isLoading: isLoadingHistory, refetch: refetchHistory } = useQuery({
+  const {
+    data: history = [],
+    isFetching: fetchingHistory,
+    isLoading: loadingHistory,
+    refetch: refetchHistory,
+  } = useQuery({
     queryKey: queryKeys.transactionHistory(userId ?? ''),
     queryFn: () => apiService.getTransactionHistory(),
     enabled: !!userId,
@@ -61,98 +105,141 @@ export default function HistoryScreen() {
     refetchOnMount: 'always' as const,
   });
 
-  const onRefresh = () => {
-    refetchActive();
+  const q = query.trim().toLowerCase();
+
+  const filteredBorrows = useMemo(
+    () =>
+      activeBorrows.filter((item) =>
+        matchesQuery([item.serialNumber, item.type, item.lastVendorId?.userName], q),
+      ),
+    [activeBorrows, q],
+  );
+
+  const filteredHistory = useMemo(
+    () =>
+      history.filter((item) =>
+        matchesQuery(
+          [item.containerId?.serialNumber, item.organizationId?.name, item.organizationId?.group, item.type],
+          q,
+        ),
+      ),
+    [history, q],
+  );
+
+  const historySections = useMemo(() => {
+    const groups = new Map<string, Transaction[]>();
+    for (const item of filteredHistory) {
+      const title = dayLabel(item.createdAt);
+      const bucket = groups.get(title) ?? [];
+      bucket.push(item);
+      groups.set(title, bucket);
+    }
+    return Array.from(groups, ([title, data]) => ({ title, data }));
+  }, [filteredHistory]);
+
+  const dueSoon = activeBorrows.filter((item) => dueState(item.updatedAt).urgent).length;
+  const refreshing = fetchingBorrows || fetchingHistory;
+
+  const onRefresh = useCallback(() => {
+    refetchBorrows();
     refetchHistory();
+  }, [refetchBorrows, refetchHistory]);
+
+  const goScan = useCallback(() => router.push('/(tabs)/scanner'), [router]);
+
+  const toggleSearch = () => {
+    setSearchOpen((open) => {
+      if (open) setQuery('');
+      return !open;
+    });
   };
 
-  const isRefreshing = isFetchingActive || isFetchingHistory;
-  const isInitialLoad = isLoadingActive || isLoadingHistory;
+  const renderBorrow = useCallback(
+    ({ item }: { item: Container }) => {
+      const due = dueState(item.updatedAt);
+      const well = due.urgent ? urgentWell : borrowWell;
+      return (
+        <CardSurface style={styles.holdCard}>
+          <Pressable
+            onPress={goScan}
+            android_ripple={null}
+            style={styles.holdHit}
+            accessibilityRole="button"
+            accessibilityLabel={`Return ${item.serialNumber}`}
+          >
+            <View style={[styles.well, { backgroundColor: well.bg }]}>
+              <Package color={well.icon} size={18} strokeWidth={2} />
+            </View>
+            <View style={styles.holdCopy}>
+              <Text style={[styles.holdTitle, { color: c.heading }]} numberOfLines={1}>
+                {item.type || 'Reusable container'}
+              </Text>
+              <Text style={[styles.holdMeta, { color: c.textMuted }]} numberOfLines={1}>
+                {item.serialNumber}
+                {item.lastVendorId?.userName ? ` · ${item.lastVendorId.userName}` : ''}
+              </Text>
+            </View>
+            <StatusBadge label={due.label} kind={due.kind} />
+          </Pressable>
+          <Pressable
+            onPress={goScan}
+            android_ripple={null}
+            style={[styles.returnBtn, { backgroundColor: c.accent }]}
+            accessibilityRole="button"
+            accessibilityLabel="Return this container"
+          >
+            <QrCode color={c.onAccent} size={16} strokeWidth={2} />
+            <Text style={[styles.returnLabel, { color: c.onAccent }]}>Return</Text>
+          </Pressable>
+        </CardSurface>
+      );
+    },
+    [borrowWell, c.accent, c.heading, c.onAccent, c.textMuted, goScan, urgentWell],
+  );
 
-  const renderActiveBorrow = useCallback(({ item }: { item: Container }) => {
-    const issueDate = new Date(item.updatedAt || Date.now());
-    const dueDate = new Date(issueDate);
-    dueDate.setDate(dueDate.getDate() + 14);
-    
-    const daysRemaining = Math.max(0, Math.ceil((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
-
-    return (
-      <TouchableOpacity 
-        style={[styles.activeCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}
-        onPress={() => router.push('/scanner')}
-        activeOpacity={0.9}
-      >
-        <View style={styles.activeHeader}>
-           <StatusBadge
-              label={daysRemaining === 0 ? 'Due today' : `${daysRemaining} days left`}
-              kind={daysRemaining <= 2 ? 'failed' : 'success'}
-           />
-           <Text style={[styles.idText, { color: c.textFaint }]}>#{item.serialNumber}</Text>
-        </View>
-
-        <View style={styles.activeBody}>
-           <View style={styles.mainInfo}>
-              <View style={[styles.packageIcon, { backgroundColor: c.accent + '10' }]}>
-                 <Package color={c.accent} size={28} strokeWidth={1.5} />
+  const renderHistoryDay = useCallback(
+    ({ item: section }: { item: { title: string; data: Transaction[] } }) => (
+      <View style={styles.dayBlock}>
+        <Text style={[styles.sectionLabel, { color: c.textFaint }]}>{section.title}</Text>
+        <CardSurface style={styles.ledgerCard}>
+          {section.data.map((item, index) => {
+            const isReturn = item.type === 'RETURN';
+            const well = isReturn ? returnWell : borrowWell;
+            const Icon = isReturn ? ArrowDownLeft : ArrowUpRight;
+            const serial = item.containerId?.serialNumber;
+            return (
+              <View key={item._id}>
+                <View style={styles.ledgerRow}>
+                  <View style={[styles.well, { backgroundColor: well.bg }]}>
+                    <Icon color={well.icon} size={18} strokeWidth={2} />
+                  </View>
+                  <View style={styles.ledgerCopy}>
+                    <Text style={[styles.ledgerTitle, { color: c.heading }]}>
+                      {isReturn ? 'Returned' : 'Borrowed'}
+                    </Text>
+                    <Text style={[styles.ledgerMeta, { color: c.textMuted }]} numberOfLines={1}>
+                      {[serial, item.organizationId?.name, formatTime(item.createdAt)].filter(Boolean).join(' · ')}
+                    </Text>
+                  </View>
+                  {isReturn ? (
+                    <StatusBadge label={`+${item.pointsAwarded ?? 0} pts`} kind="success" />
+                  ) : (
+                    <StatusBadge label="Out" kind="pending" />
+                  )}
+                </View>
+                {index < section.data.length - 1 ? (
+                  <View style={[styles.ledgerDivider, { backgroundColor: c.surfaceBorder }]} />
+                ) : null}
               </View>
-              <View style={styles.details}>
-                 <Text style={[styles.itemName, { color: c.text }]}>{item.type || 'Standard Container'}</Text>
-                 <View style={styles.metaRow}>
-                    <MapPin color={c.textFaint} size={12} />
-                    <Text style={[styles.metaText, { color: c.textFaint }]}>at {item.lastVendorId?.userName || 'Partner Vendor'}</Text>
-                 </View>
-              </View>
-           </View>
-           <View style={styles.activeFooter}>
-              <TouchableOpacity 
-                style={[styles.returnBtn, { backgroundColor: c.accent }]}
-                onPress={() => router.push('/scanner')}
-              >
-                 <Text style={[styles.returnBtnText, { color: c.onAccent }]}>RETURN NOW</Text>
-                 <ArrowRight color={c.onAccent} size={14} strokeWidth={3} />
-              </TouchableOpacity>
-           </View>
-        </View>
-      </TouchableOpacity>
-    );
-  }, [c, router]);
+            );
+          })}
+        </CardSurface>
+      </View>
+    ),
+    [borrowWell, c.heading, c.surfaceBorder, c.textFaint, c.textMuted, returnWell],
+  );
 
-  const renderHistoryItem = useCallback(({ item }: { item: Transaction }) => {
-    const isReturn = item.type === 'RETURN';
-    const date = new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const time = new Date(item.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-
-    return (
-      <TouchableOpacity style={[styles.historyCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-         <View style={styles.historyTop}>
-            <View style={[styles.historyActionIcon, { backgroundColor: isReturn ? 'rgba(34,197,94,0.12)' : '#DBEAFE' }]}>
-               {isReturn ? <ArrowDownLeft color={c.success} size={18} /> : <ArrowUpRight color="#1E40AF" size={18} />}
-            </View>
-            <View style={styles.historyMainContent}>
-               <View style={styles.historyTextRow}>
-                  <Text style={[styles.historyTitle, { color: c.text }]}>{isReturn ? 'Returned Container' : 'Borrowed Container'}</Text>
-                  <StatusBadge
-                    label={isReturn ? `+${item.pointsAwarded} pts` : 'Ongoing'}
-                    kind={isReturn ? 'success' : 'pending'}
-                  />
-               </View>
-               <Text style={[styles.historyTime, { color: c.textFaint }]}>{date} • {time}</Text>
-            </View>
-         </View>
-
-         <View style={[styles.barcodeSection, { backgroundColor: c.bg + '50', borderColor: c.surfaceBorder }]}>
-            <View style={styles.barcodeInfo}>
-               <Text style={[styles.barcodeLabel, { color: c.textFaint }]}>SERIAL ID</Text>
-               <Text style={[styles.serialFull, { color: c.textSecondary }]}>{item.containerId?.serialNumber || 'CN-712-449-002'}</Text>
-            </View>
-            <BarcodeGraphic color={c.text} opacity={0.2} />
-            <ChevronRight color={c.textFaint} size={16} />
-         </View>
-      </TouchableOpacity>
-    );
-  }, [c]);
-
-  if (isInitialLoad) {
+  if (loadingBorrows || loadingHistory) {
     return <InventorySkeleton />;
   }
 
@@ -161,160 +248,237 @@ export default function HistoryScreen() {
       <PinnedScreenHeader
         title="Activity"
         right={
-          <TouchableOpacity
-            style={[styles.notifCircle, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}
+          <Pressable
+            onPress={toggleSearch}
+            android_ripple={null}
+            style={styles.iconHit}
+            accessibilityRole="button"
+            accessibilityLabel={searchOpen ? 'Close search' : 'Search activity'}
           >
-            <Search color={c.text} size={20} />
-          </TouchableOpacity>
+            {searchOpen ? <X color={c.text} size={22} /> : <Search color={c.text} size={22} />}
+          </Pressable>
         }
       />
 
-      {/* Segmented Control - stays pinned while list scrolls */}
-      <View style={styles.segmentContainer}>
-         <View style={[styles.segmentBg, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-            <TouchableOpacity 
-               style={[styles.segment, activeSegment === 'borrows' && { backgroundColor: c.accent }]}
-               onPress={() => setActiveSegment('borrows')}
-            >
-               <Text style={[styles.segmentText, { color: activeSegment === 'borrows' ? c.onAccent : c.textFaint }]}>
-                 Active ({activeBorrows.length})
-               </Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-               style={[styles.segment, activeSegment === 'history' && { backgroundColor: c.accent }]}
-               onPress={() => setActiveSegment('history')}
-            >
-               <Text style={[styles.segmentText, { color: activeSegment === 'history' ? c.onAccent : c.textFaint }]}>History</Text>
-            </TouchableOpacity>
-         </View>
+      {searchOpen ? (
+        <View style={[styles.searchWrap, { backgroundColor: c.muted }]}>
+          <Search color={c.textMuted} size={16} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Serial, location, or type"
+            placeholderTextColor={c.textFaint}
+            style={[styles.searchInput, { color: c.heading }]}
+            autoFocus
+            autoCorrect={false}
+            autoCapitalize="none"
+            returnKeyType="search"
+            accessibilityLabel="Search activity"
+          />
+        </View>
+      ) : null}
+
+      <View style={[styles.segment, { backgroundColor: c.muted }]}>
+        <Pressable
+          onPress={() => setSegment('borrows')}
+          android_ripple={null}
+          style={[styles.segmentTab, segment === 'borrows' && { backgroundColor: c.accent }]}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: segment === 'borrows' }}
+        >
+          <Text style={[styles.segmentLabel, { color: segment === 'borrows' ? c.onAccent : c.textMuted }]}>
+            Out now{activeBorrows.length ? ` · ${activeBorrows.length}` : ''}
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => setSegment('history')}
+          android_ripple={null}
+          style={[styles.segmentTab, segment === 'history' && { backgroundColor: c.accent }]}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: segment === 'history' }}
+        >
+          <Text style={[styles.segmentLabel, { color: segment === 'history' ? c.onAccent : c.textMuted }]}>
+            History
+          </Text>
+        </Pressable>
       </View>
 
-      <View style={{ flex: 1 }}>
-        {activeSegment === 'borrows' ? (
-          <FlatList
-            data={activeBorrows}
-            renderItem={renderActiveBorrow}
-            keyExtractor={(item) => item._id}
-            contentContainerStyle={styles.listPadding}
-            showsVerticalScrollIndicator={false}
-            refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={c.accent} />}
-            ListEmptyComponent={
-              <View style={styles.emptyState}>
-                 <Package color={c.textFaint} size={64} strokeWidth={1} />
-                 <Text style={[screenHeader.emptyTitle, { color: c.text }]}>Nothing borrowed yet</Text>
-                 <Text style={[styles.emptyMsg, { color: c.textMuted }]}>Scan a container at any partner location to start tracking your inventory.</Text>
+      {segment === 'borrows' ? (
+        <FlatList
+          data={filteredBorrows}
+          keyExtractor={(item) => item._id}
+          renderItem={renderBorrow}
+          ListHeaderComponent={
+            filteredBorrows.length ? (
+              <Text style={[styles.sectionLabel, styles.listHeader, { color: c.textFaint }]}>
+                {dueSoon > 0 ? `${dueSoon} due soon` : `${filteredBorrows.length} out`}
+              </Text>
+            ) : null
+          }
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.accent} />}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <View style={[styles.emptyWell, { backgroundColor: c.muted }]}>
+                <Package color={c.textMuted} size={22} strokeWidth={1.8} />
               </View>
-            }
-          />
-        ) : (
-          <FlatList
-            data={history}
-            renderItem={renderHistoryItem}
-            keyExtractor={(item) => item._id}
-            contentContainerStyle={styles.listPadding}
-            showsVerticalScrollIndicator={false}
-            refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={c.accent} />}
-            ListEmptyComponent={
-              <View style={styles.emptyState}>
-                 <HistoryIcon color={c.textFaint} size={64} strokeWidth={1} />
-                 <Text style={[screenHeader.emptyTitle, { color: c.text }]}>No transactions found</Text>
+              <Text style={[styles.emptyTitle, { color: c.heading }]}>
+                {q ? 'No matching holds' : 'Nothing out'}
+              </Text>
+              <Text style={[styles.emptyBody, { color: c.textMuted }]}>
+                {q
+                  ? 'Try another serial or location.'
+                  : 'Borrow a container and it will show up here until you return it.'}
+              </Text>
+              {!q ? (
+                <Pressable
+                  onPress={goScan}
+                  android_ripple={null}
+                  style={[styles.emptyCta, { backgroundColor: c.accent }]}
+                >
+                  <Text style={[styles.emptyCtaLabel, { color: c.onAccent }]}>Scan to borrow</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          }
+        />
+      ) : (
+        <FlatList
+          data={historySections}
+          keyExtractor={(item) => item.title}
+          renderItem={renderHistoryDay}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.accent} />}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <View style={[styles.emptyWell, { backgroundColor: c.muted }]}>
+                <ArrowDownLeft color={c.textMuted} size={22} strokeWidth={1.8} />
               </View>
-            }
-          />
-        )}
-      </View>
+              <Text style={[styles.emptyTitle, { color: c.heading }]}>
+                {q ? 'No matching activity' : 'No activity yet'}
+              </Text>
+              <Text style={[styles.emptyBody, { color: c.textMuted }]}>
+                {q ? 'Try another serial or collection base.' : 'Returns and borrows will land here, newest first.'}
+              </Text>
+            </View>
+          }
+        />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  notifCircle: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-
-  segmentContainer: { paddingHorizontal: PADDING, marginBottom: 20 },
-  segmentBg: { height: 52, borderRadius: 26, borderWidth: 1, flexDirection: 'row', padding: 5 },
-  segment: { flex: 1, borderRadius: 21, justifyContent: 'center', alignItems: 'center' },
-  segmentText: { fontSize: 13, fontWeight: '800', letterSpacing: 0.3 },
-
-  listPadding: { paddingHorizontal: PADDING, paddingBottom: 100 },
-  
-  // Active Card Styles
-  activeCard: {
-    padding: 24,
-    borderRadius: RADIUS,
-    borderWidth: 1,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  activeHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  statusBadge: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4, paddingHorizontal: 10, borderRadius: RADIUS, gap: 6 },
-  statusDot: { width: 6, height: 6, borderRadius: 3 },
-  statusText: { fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
-  idText: { fontSize: 11, fontWeight: '600' },
-
-  activeBody: { gap: 16 },
-  mainInfo: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  packageIcon: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center' },
-  details: { flex: 1 },
-  itemName: { fontSize: 18, fontWeight: '800', marginBottom: 2 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  metaText: { fontSize: 12 },
-  activeFooter: { marginTop: 4 },
-  returnBtn: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
+  iconHit: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: 12, 
-    paddingVertical: 12, 
-    borderRadius: RADIUS,
   },
-  returnBtnText: { fontSize: 13, fontWeight: '700', letterSpacing: 1 },
-
-  // History Card Styles - Professional Revision
-  historyCard: {
-    borderRadius: RADIUS,
-    borderWidth: 1,
-    padding: 20,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  historyTop: { flexDirection: 'row', gap: 14, alignItems: 'center', marginBottom: 14 },
-  historyActionIcon: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center' },
-  historyMainContent: { flex: 1 },
-  historyTextRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  historyTitle: { fontSize: 15, fontWeight: '700' },
-  impactBadge: { fontSize: 13, fontWeight: '900' },
-  historyTime: { fontSize: 12, marginTop: 2 },
-
-  barcodeSection: {
+  searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: RADIUS,
-    borderWidth: 1,
+    gap: 10,
+    marginHorizontal: 16,
+    marginBottom: 10,
+    height: 44,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    paddingVertical: 0,
+    ...geist('400'),
+  },
+  segment: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    padding: 4,
+    borderRadius: 14,
+    gap: 4,
+  },
+  segmentTab: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 11,
+    alignItems: 'center',
+  },
+  segmentLabel: { fontSize: 13, ...geist('600') },
+  list: { paddingHorizontal: 16, paddingBottom: 24, flexGrow: 1 },
+  sectionLabel: {
+    fontSize: 11,
+    letterSpacing: 1.1,
+    marginBottom: 8,
+    paddingLeft: 4,
+    textTransform: 'uppercase',
+    ...geist('700'),
+  },
+  listHeader: { marginTop: 8 },
+  dayBlock: { marginTop: 16 },
+  ledgerCard: { paddingHorizontal: 14 },
+  holdCard: { padding: 14, marginBottom: 10 },
+  holdHit: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  well: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  holdCopy: { flex: 1, minWidth: 0 },
+  holdTitle: { fontSize: 16, letterSpacing: -0.2, ...geist('600') },
+  holdMeta: { fontSize: 12.5, marginTop: 2, ...geist('400') },
+  returnBtn: {
+    marginTop: 12,
+    height: 44,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  returnLabel: { fontSize: 15, ...geist('600') },
+  ledgerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
+    paddingVertical: 12,
+    minHeight: 68,
   },
-  barcodeInfo: { flex: 1 },
-  barcodeLabel: { fontSize: 8, fontWeight: '900', letterSpacing: 1, marginBottom: 2 },
-  serialFull: { fontSize: 13, fontWeight: '700', letterSpacing: -0.2 },
-  
-  barcodeContainer: { 
-    flexDirection: 'row', 
-    gap: 2, 
-    alignItems: 'flex-end',
-    height: 30,
+  ledgerCopy: { flex: 1, minWidth: 0 },
+  ledgerTitle: { fontSize: 16, ...geist('600') },
+  ledgerMeta: { fontSize: 12.5, marginTop: 2, ...geist('400') },
+  ledgerDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: 54,
   },
-  barcodeStrip: { width: 1.5, borderRadius: 0.5 },
-
-  emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 100, paddingHorizontal: 20 },
-  emptyTitle: { marginTop: 24, marginBottom: 12 },
-  emptyMsg: { fontSize: 15, textAlign: 'center', lineHeight: 22, opacity: 0.7 },
+  empty: {
+    alignItems: 'center',
+    paddingTop: 72,
+    paddingHorizontal: 28,
+  },
+  emptyWell: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  emptyTitle: { fontSize: 17, letterSpacing: -0.2, marginBottom: 6, ...geist('600') },
+  emptyBody: { fontSize: 14, lineHeight: 20, textAlign: 'center', ...geist('400') },
+  emptyCta: {
+    marginTop: 20,
+    height: 44,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyCtaLabel: { fontSize: 15, ...geist('600') },
 });

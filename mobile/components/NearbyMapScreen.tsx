@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, useWindowDimensions, Platform, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, useWindowDimensions, Platform, ScrollView, Linking, TextInput } from 'react-native';
 import { MapSkeleton } from '@/components/Skeleton';
 import MapView, { Marker } from 'react-native-maps';
 import { OsmMapView, type OsmMapViewRef } from '@/components/OsmMapView';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
+import { useCollectionStore } from '@/src/store/useCollectionStore';
+import { formatDistanceKm, haversineKm } from '@/src/lib/geo';
 import {
   MapPin, Navigation, Search, Filter,
   ChevronRight, LocateFixed, Droplet,
   Layers, Package, Shapes, Box, ArrowLeft,
 } from 'lucide-react-native';
 import { useThemeColors } from '@/src/store/useThemeStore';
+import { geist } from '@/src/theme/fonts';
 import { useTabBarInsets } from '@/src/hooks/useTabBarInsets';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '@/src/api/service';
@@ -40,10 +43,13 @@ export default function NearbyMapScreen({
   const { width, height } = useWindowDimensions();
   const { tabBarHeight } = useTabBarInsets();
   const mapRef = useRef<MapView>(null);
+  const didFitRef = useRef(false);
   const osmMapRef = useRef<OsmMapViewRef>(null);
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [activeFilter, setActiveFilter] = useState('All');
+  const [query, setQuery] = useState('');
+  const setSelectedBase = useCollectionStore((s) => s.setSelectedBase);
 
   const bottomInset = embeddedInTab ? tabBarHeight : 0;
 
@@ -53,11 +59,26 @@ export default function NearbyMapScreen({
   });
 
   const filteredVendors = useMemo(() => {
-    if (activeFilter === 'All') return vendors;
-    return vendors.filter((v) =>
-      v.acceptedMaterials?.includes(activeFilter),
-    );
-  }, [vendors, activeFilter]);
+    const q = query.trim().toLowerCase();
+    const userLat = location?.coords.latitude;
+    const userLng = location?.coords.longitude;
+    return vendors
+      .filter((v) => {
+        if (activeFilter !== 'All' && !v.acceptedMaterials?.includes(activeFilter)) return false;
+        if (!q) return true;
+        return [v.name, v.group, v.location?.address].some((value) =>
+          value?.toLowerCase().includes(q),
+        );
+      })
+      .map((v) => {
+        if (userLat == null || userLng == null || v.location?.lat == null) return v;
+        return {
+          ...v,
+          distanceKm: haversineKm(userLat, userLng, v.location.lat, v.location.lng),
+        };
+      })
+      .sort((a, b) => (a.distanceKm ?? Number.POSITIVE_INFINITY) - (b.distanceKm ?? Number.POSITIVE_INFINITY));
+  }, [vendors, activeFilter, query, location]);
 
   useEffect(() => {
     (async () => {
@@ -71,6 +92,27 @@ export default function NearbyMapScreen({
         /* Location unavailable — map still works with default region */
       }
     })();
+  }, []);
+
+  useEffect(() => {
+    if (didFitRef.current || useOpenStreetMap || !mapRef.current || filteredVendors.length < 2) return;
+    const coords = filteredVendors
+      .filter((v) => v.location?.lat != null)
+      .map((v) => ({ latitude: v.location.lat, longitude: v.location.lng }));
+    if (location) {
+      coords.push({ latitude: location.coords.latitude, longitude: location.coords.longitude });
+    }
+    mapRef.current.fitToCoordinates(coords, {
+      edgePadding: { top: 120, right: 40, bottom: 180, left: 40 },
+      animated: true,
+    });
+    didFitRef.current = true;
+  }, [filteredVendors, location]);
+
+  const openDirections = useCallback((vendor: Vendor) => {
+    if (!vendor.location) return;
+    const { lat, lng } = vendor.location;
+    Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
   }, []);
 
   const centerOnUser = useCallback(() => {
@@ -161,7 +203,16 @@ export default function NearbyMapScreen({
           ) : null}
           <View style={[styles.searchBar, { backgroundColor: c.tabBg, borderColor: c.surfaceBorder }]}>
             <Search color={c.textMuted} size={18} />
-            <Text style={[styles.searchPlaceholder, { color: c.textMuted }]}>Find recycling points...</Text>
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder={`${vendors.length} collection bases`}
+              placeholderTextColor={c.textMuted}
+              style={[styles.searchInput, { color: c.heading }]}
+              autoCorrect={false}
+              returnKeyType="search"
+              accessibilityLabel="Search collection bases"
+            />
             <Filter color={c.textMuted} size={16} />
           </View>
         </View>
@@ -231,9 +282,34 @@ export default function NearbyMapScreen({
                   </View>
                 ))}
               </View>
-              <Text style={[styles.vendorAddress, { color: c.textMuted }]}>{selectedVendor.location.address}</Text>
+              <Text style={[styles.vendorAddress, { color: c.textMuted }]}>
+                {selectedVendor.location.address}
+              </Text>
+              <Text style={[styles.vendorMeta, { color: c.textFaint }]}>
+                {[
+                  selectedVendor.group,
+                  selectedVendor.hours,
+                  location && selectedVendor.location
+                    ? formatDistanceKm(
+                        haversineKm(
+                          location.coords.latitude,
+                          location.coords.longitude,
+                          selectedVendor.location.lat,
+                          selectedVendor.location.lng,
+                        ),
+                      )
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </Text>
             </View>
-            <TouchableOpacity style={[styles.navBtn, { backgroundColor: c.accent }]}>
+            <TouchableOpacity
+              style={[styles.navBtn, { backgroundColor: c.accent }]}
+              onPress={() => openDirections(selectedVendor)}
+              accessibilityLabel="Get directions"
+              accessibilityRole="button"
+            >
               <Navigation color={c.onAccent} size={20} />
             </TouchableOpacity>
           </View>
@@ -245,13 +321,23 @@ export default function NearbyMapScreen({
             </View>
             <View style={[styles.statDivider, { backgroundColor: c.surfaceBorder }]} />
             <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: c.text }]}>Open</Text>
-              <Text style={[styles.statLabel, { color: c.textFaint }]}>until 8:00 PM</Text>
+              <Text style={[styles.statValue, { color: c.text }]} numberOfLines={1}>
+                {selectedVendor.hours ? selectedVendor.hours.split(' ')[0] : 'Open'}
+              </Text>
+              <Text style={[styles.statLabel, { color: c.textFaint }]}>hours</Text>
             </View>
           </View>
 
-          <TouchableOpacity style={[styles.viewDetailsBtn, { backgroundColor: c.surfaceBorder + '44' }]}>
-            <Text style={[styles.viewDetailsText, { color: c.textSecondary }]}>View Points Info</Text>
+          <TouchableOpacity
+            style={[styles.viewDetailsBtn, { backgroundColor: c.surfaceBorder + '44' }]}
+            onPress={() => {
+              setSelectedBase(selectedVendor);
+              router.push(`/collection/${selectedVendor._id}` as any);
+            }}
+            accessibilityLabel="Open collection base"
+            accessibilityRole="button"
+          >
+            <Text style={[styles.viewDetailsText, { color: c.textSecondary }]}>Open collection base</Text>
             <ChevronRight color={c.textFaint} size={16} />
           </TouchableOpacity>
         </View>
@@ -345,6 +431,18 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontSize: 15,
     fontWeight: '500',
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 15,
+    paddingVertical: 0,
+    ...geist('400'),
+  },
+  vendorMeta: {
+    fontSize: 12,
+    marginTop: 4,
+    ...geist('400'),
   },
   locateButton: {
     position: 'absolute',

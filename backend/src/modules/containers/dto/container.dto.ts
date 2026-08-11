@@ -1,5 +1,5 @@
-import { IsEmail, IsNotEmpty, IsString, MaxLength } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsMongoId, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class IssueContainerDto {
   @IsNotEmpty()
@@ -23,6 +23,11 @@ export class ReturnContainerDto {
   @IsEmail()
   @ApiProperty({ example: 'user@example.com' })
   userEmail: string;
+
+  @IsOptional()
+  @IsMongoId()
+  @ApiPropertyOptional({ description: 'Collection base (Organization) where the return happened' })
+  collectionPointId?: string;
 }
 
 export class VerifyContainerDto {

@@ -2,18 +2,24 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { Flame, Globe, BarChart3, ChevronRight } from 'lucide-react-native';
-import { useThemeColors } from '@/src/store/useThemeStore';
+import { Flame, ClipboardCheck, Globe, ChevronRight } from 'lucide-react-native';
+import { useThemeColors, useThemeStore } from '@/src/store/useThemeStore';
 import { useAuthStore } from '@/src/store/useAuthStore';
 import { apiService } from '@/src/api/service';
 import { Skeleton } from '@/components/Skeleton';
-
-const RADIUS = 14;
+import CardSurface from '@/components/CardSurface';
+import StatusBadge from '@/components/StatusBadge';
+import { menuWell } from '@/src/theme/chrome';
+import { geist } from '@/src/theme/fonts';
 
 export default function ResearchHubOverview() {
   const c = useThemeColors();
+  const mode = useThemeStore((s) => s.mode);
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
+  const amber = menuWell(mode, 'amber');
+  const sky = menuWell(mode, 'sky');
+  const slate = menuWell(mode, 'slate');
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['campaign-stats'],
@@ -39,7 +45,7 @@ export default function ResearchHubOverview() {
   if (statsLoading) {
     return (
       <View style={styles.wrap}>
-        <Skeleton width="100%" height={160} borderRadius={RADIUS} />
+        <Skeleton width="100%" height={168} borderRadius={14} />
       </View>
     );
   }
@@ -53,63 +59,68 @@ export default function ResearchHubOverview() {
 
   return (
     <View style={styles.wrap}>
-      <View
-        style={[styles.hero, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}
-      >
-        <View style={styles.heroTop}>
-          <View style={styles.heroText}>
-            <Text style={[styles.heroEyebrow, { color: c.textMuted }]}>SDG 12 RESEARCH</Text>
-            <Text style={[styles.heroTitle, { color: c.text }]}>Research Hub</Text>
-            <Text style={[styles.heroDesc, { color: c.textSecondary }]}>
-              Track campaigns, daily pulses, and SDG 12 alignment
-            </Text>
-          </View>
-        </View>
+      <CardSurface padded>
+        <Text style={[styles.eyebrow, { color: c.textFaint }]}>SDG 12 · RESEARCH</Text>
+        <Text style={[styles.title, { color: c.heading }]}>Study progress</Text>
+        <Text style={[styles.desc, { color: c.textMuted }]}>
+          Campaign scores, daily signals, and responsible-consumption alignment.
+        </Text>
 
-        <View style={styles.statsRow}>
-          <View style={[styles.statPill, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-            <Flame size={16} color="#F59E0B" />
-            <Text style={[styles.statValue, { color: c.text }]}>{streak}</Text>
-            <Text style={[styles.statLabel, { color: c.textMuted }]}>Streak</Text>
+        <View style={[styles.statsRow, { borderTopColor: c.surfaceBorder }]}>
+          <View style={styles.statBox}>
+            <View style={[styles.statWell, { backgroundColor: amber.bg }]}>
+              <Flame size={16} color={amber.icon} strokeWidth={2} />
+            </View>
+            <Text style={[styles.statValue, { color: c.heading }]}>{streak}</Text>
+            <Text style={[styles.statLabel, { color: c.textFaint }]}>Streak</Text>
           </View>
-          <View style={[styles.statPill, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-            <BarChart3 size={16} color="#3B82F6" />
-            <Text style={[styles.statValue, { color: c.text }]}>{evaluated}/{total}</Text>
-            <Text style={[styles.statLabel, { color: c.textMuted }]}>Evaluated</Text>
+          <View style={[styles.statDivider, { backgroundColor: c.surfaceBorder }]} />
+          <View style={styles.statBox}>
+            <View style={[styles.statWell, { backgroundColor: slate.bg }]}>
+              <ClipboardCheck size={16} color={slate.icon} strokeWidth={2} />
+            </View>
+            <Text style={[styles.statValue, { color: c.heading }]}>{evaluated}/{total}</Text>
+            <Text style={[styles.statLabel, { color: c.textFaint }]}>Evaluated</Text>
           </View>
-          <View style={[styles.statPill, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-            <Globe size={16} color="#1E40AF" />
-            <Text style={[styles.statValue, { color: c.text }]}>{sdg}%</Text>
-            <Text style={[styles.statLabel, { color: c.textMuted }]}>SDG 12</Text>
+          <View style={[styles.statDivider, { backgroundColor: c.surfaceBorder }]} />
+          <View style={styles.statBox}>
+            <View style={[styles.statWell, { backgroundColor: sky.bg }]}>
+              <Globe size={16} color={sky.icon} strokeWidth={2} />
+            </View>
+            <Text style={[styles.statValue, { color: c.heading }]}>{sdg}%</Text>
+            <Text style={[styles.statLabel, { color: c.textFaint }]}>SDG 12</Text>
           </View>
         </View>
 
         <View style={styles.chipRow}>
-          <View style={[styles.chip, { backgroundColor: pulseDone ? 'rgba(34,197,94,0.12)' : 'rgba(245,158,11,0.12)' }]}>
-            <Text style={[styles.chipText, { color: pulseDone ? c.success : '#b45309' }]}>
-              {pulseDone ? '✓ Pulse done today' : '○ Pulse pending'}
-            </Text>
-          </View>
-          <View style={[styles.chip, { backgroundColor: researchDone ? 'rgba(34,197,94,0.12)' : c.inputBg }]}>
-            <Text style={[styles.chipText, { color: researchDone ? c.success : c.textMuted }]}>
-              {researchDone ? '✓ Research survey' : '○ Research survey'}
-            </Text>
-          </View>
+          <StatusBadge
+            label={pulseDone ? 'Pulse complete' : 'Pulse pending'}
+            kind={pulseDone ? 'success' : 'pending'}
+          />
+          <StatusBadge
+            label={researchDone ? 'Survey complete' : 'Survey open'}
+            kind={researchDone ? 'success' : 'other'}
+          />
         </View>
-      </View>
+      </CardSurface>
 
       {!pulseDone && (
         <TouchableOpacity
-          style={[styles.pulseCta, { backgroundColor: c.accent }]}
           onPress={() => router.push('/surveys?tab=pulse' as any)}
-          activeOpacity={0.85}
+          activeOpacity={0.82}
+          accessibilityRole="button"
+          accessibilityLabel="Complete today's pulse"
         >
-          <Flame size={18} color={c.onAccent} />
-          <View style={styles.pulseCtaText}>
-            <Text style={[styles.pulseCtaTitle, { color: c.onAccent }]}>Today's pulse is waiting</Text>
-            <Text style={[styles.pulseCtaSub, { color: c.onAccent, opacity: 0.72 }]}>30 seconds · keep your streak alive</Text>
-          </View>
-          <ChevronRight size={18} color={c.onAccent} />
+          <CardSurface style={styles.pulseRow}>
+            <View style={[styles.pulseWell, { backgroundColor: amber.bg }]}>
+              <Flame size={18} color={amber.icon} strokeWidth={2} />
+            </View>
+            <View style={styles.pulseCopy}>
+              <Text style={[styles.pulseTitle, { color: c.heading }]}>Today's pulse is waiting</Text>
+              <Text style={[styles.pulseSub, { color: c.textMuted }]}>30 seconds · keep your streak</Text>
+            </View>
+            <ChevronRight size={18} color={c.textMuted} />
+          </CardSurface>
         </TouchableOpacity>
       )}
     </View>
@@ -118,35 +129,62 @@ export default function ResearchHubOverview() {
 
 const styles = StyleSheet.create({
   wrap: { gap: 12, marginBottom: 8 },
-  hero: { borderRadius: RADIUS, borderWidth: 1, padding: 16 },
-  heroTop: { marginBottom: 16 },
-  heroText: { flex: 1 },
-  heroEyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 1.2, marginBottom: 6 },
-  heroTitle: { fontSize: 17, fontWeight: '700', marginBottom: 4 },
-  heroDesc: { fontSize: 12, lineHeight: 17 },
-  statsRow: { flexDirection: 'row', gap: 8 },
-  statPill: {
-    flex: 1,
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    alignItems: 'center',
-    gap: 4,
+  eyebrow: {
+    fontSize: 11,
+    letterSpacing: 1.2,
+    marginBottom: 8,
+    ...geist('700'),
   },
-  statValue: { fontSize: 15, fontWeight: '800' },
-  statLabel: { fontSize: 10, fontWeight: '600' },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
-  chip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20 },
-  chipText: { fontSize: 11, fontWeight: '600' },
-  pulseCta: {
+  title: {
+    fontSize: 20,
+    letterSpacing: -0.4,
+    marginBottom: 6,
+    ...geist('700'),
+  },
+  desc: {
+    fontSize: 13,
+    lineHeight: 19,
+    ...geist('400'),
+  },
+  statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 14,
-    borderRadius: RADIUS,
+    marginTop: 18,
+    paddingTop: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
-  pulseCtaText: { flex: 1 },
-  pulseCtaTitle: { color: '#FFF', fontSize: 14, fontWeight: '700' },
-  pulseCtaSub: { color: 'rgba(255,255,255,0.8)', fontSize: 11, marginTop: 2 },
+  statBox: { flex: 1, alignItems: 'center', gap: 6 },
+  statWell: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statValue: { fontSize: 16, ...geist('700') },
+  statLabel: {
+    fontSize: 10,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+    ...geist('600'),
+  },
+  statDivider: { width: StyleSheet.hairlineWidth, height: 36 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
+  pulseRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 14,
+  },
+  pulseWell: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pulseCopy: { flex: 1 },
+  pulseTitle: { fontSize: 15, ...geist('600') },
+  pulseSub: { fontSize: 12.5, marginTop: 2, ...geist('400') },
 });

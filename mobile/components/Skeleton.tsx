@@ -115,18 +115,19 @@ export function InventorySkeleton() {
   const c = useThemeColors();
   return (
     <View style={[skeletonStyles.container, { backgroundColor: c.bg }]}>
-      <Skeleton width={200} height={22} style={{ marginBottom: 20 }} />
-      <Skeleton width="100%" height={52} borderRadius={26} style={{ marginBottom: 20 }} />
+      <Skeleton width={120} height={18} style={{ alignSelf: 'center', marginBottom: 16 }} />
+      <Skeleton width="100%" height={44} borderRadius={14} style={{ marginBottom: 20 }} />
+      <Skeleton width={72} height={10} style={{ marginBottom: 12 }} />
       {[1, 2, 3].map((i) => (
         <View key={i} style={[skeletonStyles.inventoryCard, { backgroundColor: c.surface }]}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-            <Skeleton width={48} height={48} borderRadius={14} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <Skeleton width={42} height={42} borderRadius={21} />
             <View style={{ flex: 1 }}>
-              <Skeleton width="70%" height={16} />
-              <Skeleton width="45%" height={12} style={{ marginTop: 6 }} />
+              <Skeleton width="58%" height={14} />
+              <Skeleton width="40%" height={11} style={{ marginTop: 6 }} />
             </View>
+            <Skeleton width={64} height={18} borderRadius={999} />
           </View>
-          <Skeleton width="100%" height={40} borderRadius={14} style={{ marginTop: 14 }} />
         </View>
       ))}
     </View>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  StyleSheet, Text, View, TouchableOpacity, TextInput,
+  StyleSheet, Text, View, TouchableOpacity, Pressable, TextInput,
   Alert, ScrollView, Platform, Modal, Share,
   KeyboardAvoidingView,
 } from 'react-native';
@@ -10,11 +10,10 @@ import { apiService } from '@/src/api/service';
 import {
   LogOut, Edit2, Check, X,
   Camera, Key, Sun, Moon, ShieldCheck,
-  Bell, Heart, HelpCircle, Star, Leaf, Info, Package, ArrowLeft,
+  Bell, Heart, HelpCircle, Star, Leaf, Info, Package,
 } from 'lucide-react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import RewardsSection from '@/components/RewardsSection';
-import { useRouter } from 'expo-router';
 import PinnedScreenHeader from '@/components/PinnedScreenHeader';
 import { useNotificationPreferencesStore } from '@/src/store/useNotificationPreferences';
 import * as ImagePicker from 'expo-image-picker';
@@ -34,7 +33,6 @@ export default function ProfileScreen() {
   const { mode, toggleTheme } = useThemeStore();
   const c = useThemeColors();
   const queryClient = useQueryClient();
-  const router = useRouter();
 
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState(user?.userName || '');
@@ -187,18 +185,8 @@ export default function ProfileScreen() {
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>
       <PinnedScreenHeader
-        left={
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={[styles.backBtn, { backgroundColor: c.surfaceBorder + '33' }]}
-            accessibilityLabel="Go back"
-            accessibilityRole="button"
-          >
-            <ArrowLeft color={c.text} size={22} />
-          </TouchableOpacity>
-        }
+        showBack
         title="Settings"
-        subtitle="Manage your account & impact"
         right={
           <TouchableOpacity
             onPress={toggleTheme}
@@ -214,13 +202,19 @@ export default function ProfileScreen() {
         <View style={[styles.heroCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
           <View style={styles.heroMain}>
             <View style={styles.avatarColumn}>
-              <TouchableOpacity onPress={showAvatarOptions} style={styles.avatarContainer} activeOpacity={0.8} accessibilityLabel="Change profile picture" accessibilityRole="button">
+              <Pressable
+                onPress={showAvatarOptions}
+                style={styles.avatarContainer}
+                android_ripple={null}
+                accessibilityLabel="Change profile picture"
+                accessibilityRole="button"
+              >
                 <UserAvatar name={user.userName} uri={user.avatar} size="lg" verified={(user.impact?.totalReturns ?? 0) > 0} />
                 {loading && <View style={styles.avatarLoader}><ButtonLoader color={c.onAccent} /></View>}
                 <View style={[styles.editBadge, { backgroundColor: c.accent, borderColor: c.surface }]}>
                   <Camera color={c.onAccent} size={12} />
                 </View>
-              </TouchableOpacity>
+              </Pressable>
               {user.avatar ? (
                 <TouchableOpacity
                   onPress={confirmRemoveAvatar}
@@ -401,7 +395,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingBottom: 40 },
-  backBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
   themeBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
 
   heroCard: {

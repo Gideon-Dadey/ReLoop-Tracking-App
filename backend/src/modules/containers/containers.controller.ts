@@ -50,7 +50,12 @@ export class ContainersController {
   @ApiResponse({ status: 201, description: 'Container returned' })
   @ApiResponse({ status: 400, description: 'Container not issued' })
   async return(@Body() body: ReturnContainerDto, @Request() req: any) {
-    return this.containersService.returnByEmail(body.serialNumber, body.userEmail, req.user.id);
+    return this.containersService.returnByEmail(
+      body.serialNumber,
+      body.userEmail,
+      req.user.id,
+      body.collectionPointId,
+    );
   }
 
   @Post('verify')

@@ -127,11 +127,11 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={getNavigationTheme(mode)}>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg }, animation: 'fade' }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="(auth)/welcome" />
-        <Stack.Screen name="(auth)/login" />
-        <Stack.Screen name="(auth)/register" />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg }, animation: 'slide_from_right' }}>
+        <Stack.Screen name="(tabs)" options={{ animation: 'none' }} />
+        <Stack.Screen name="(auth)/welcome" options={{ animation: 'fade' }} />
+        <Stack.Screen name="(auth)/login" options={{ animation: 'fade' }} />
+        <Stack.Screen name="(auth)/register" options={{ animation: 'fade' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
       <StatusBar style={statusBarStyle} />

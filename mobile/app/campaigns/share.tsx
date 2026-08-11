@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Platform,
 } from 'react-native';
-import { Stack } from 'expo-router';
+import PinnedScreenHeader from '@/components/PinnedScreenHeader';
 import { useQuery } from '@tanstack/react-query';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
@@ -18,9 +18,9 @@ const RADIUS = 14;
 type CardTheme = 'dark' | 'light' | 'slate';
 
 const CARD_THEMES: Record<CardTheme, { bg: string; text: string; accent: string; secondary: string }> = {
-  dark: { bg: colors.dark.surface, text: colors.dark.text, accent: colors.dark.accent, secondary: colors.dark.textMuted },
+  dark: { bg: '#000000', text: '#ffffff', accent: '#ffffff', secondary: '#a1a1aa' },
   light: { bg: colors.light.surface, text: colors.light.text, accent: colors.light.accent, secondary: colors.light.textMuted },
-  slate: { bg: '#1E293B', text: '#ffffff', accent: '#E2E8F0', secondary: '#94A3B8' },
+  slate: { bg: '#111111', text: '#ffffff', accent: '#ffffff', secondary: '#a1a1aa' },
 };
 
 function ImpactCard({ theme, user }: { theme: CardTheme; user: any }) {
@@ -122,8 +122,9 @@ export default function ShareScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: c.bg }]} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: 'Share Your Impact' }} />
+    <View style={[styles.container, { backgroundColor: c.bg }]}>
+      <PinnedScreenHeader showBack title="Share Your Impact" />
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
 
       {/* Type Selector */}
       <View style={styles.typeRow}>
@@ -188,6 +189,7 @@ export default function ShareScreen() {
         <Text style={[styles.shareBtnText, { color: c.onAccent }]}>Share Card</Text>
       </TouchableOpacity>
     </ScrollView>
+    </View>
   );
 }
 

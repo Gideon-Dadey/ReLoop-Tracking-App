@@ -3,7 +3,7 @@ import {
   View, Text, ScrollView, StyleSheet, RefreshControl, useWindowDimensions,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { Stack } from 'expo-router';
+import PinnedScreenHeader from '@/components/PinnedScreenHeader';
 import { BarChart, PieChart } from 'react-native-gifted-charts';
 import { TrendingUp, Award, Globe } from 'lucide-react-native';
 import { useThemeColors } from '@/src/store/useThemeStore';
@@ -36,7 +36,7 @@ export default function CampaignDashboard() {
   if (isLoading || !stats) {
     return (
       <View style={[styles.container, { backgroundColor: c.bg }]}>
-        <Stack.Screen options={{ title: 'Campaign Dashboard' }} />
+        <PinnedScreenHeader showBack title="Campaign Dashboard" />
         <View style={{ padding: 20, gap: 16 }}>
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} width="100%" height={160} borderRadius={RADIUS} />
@@ -61,12 +61,13 @@ export default function CampaignDashboard() {
   }));
 
   return (
+    <View style={[styles.container, { backgroundColor: c.bg }]}>
+      <PinnedScreenHeader showBack title="Campaign Dashboard" />
     <ScrollView
-      style={[styles.container, { backgroundColor: c.bg }]}
+      style={{ flex: 1 }}
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} tintColor={c.accent} />}
     >
-      <Stack.Screen options={{ title: 'Campaign Dashboard' }} />
 
       {/* Stats Cards */}
       <View style={styles.statsRow}>
@@ -177,6 +178,7 @@ export default function CampaignDashboard() {
         </View>
       </View>
     </ScrollView>
+    </View>
   );
 }
 

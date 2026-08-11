@@ -10,7 +10,6 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import {
@@ -23,9 +22,8 @@ import {
   Flame,
   Award,
 } from 'lucide-react-native';
-import { useThemeColors } from '@/src/store/useThemeStore';
+import { useThemeColors, useThemeStore } from '@/src/store/useThemeStore';
 import { typography } from '@/src/theme/fonts';
-import { promoGradients } from '@/src/theme/tokens';
 import {
   buildReferralUrl,
   buildInviteMessage as buildShareInviteMessage,
@@ -55,6 +53,8 @@ export default function ShareInviteSheet({
   onShareImpactCard,
 }: ShareInviteSheetProps) {
   const c = useThemeColors();
+  const mode = useThemeStore((s) => s.mode);
+  const previewBg = mode === 'dark' ? '#000000' : '#111111';
   const slideAnim = useRef(new Animated.Value(320)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [copied, setCopied] = React.useState(false);
@@ -179,30 +179,25 @@ export default function ShareInviteSheet({
           Share your referral link and grow the ReLoop community.
         </Text>
 
-        <LinearGradient
-          colors={promoGradients.slate}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.previewCard}
-        >
+        <View style={[styles.previewCard, { backgroundColor: previewBg, borderColor: c.surfaceBorder }]}>
           <View style={styles.previewBrand}>
-            <Recycle color="#E2E8F0" size={18} />
+            <Recycle color="#FFFFFF" size={18} />
             <Text style={styles.previewBrandText}>ReLoop</Text>
           </View>
           <Text style={styles.previewHeadline}>@{userName} is reusing for good</Text>
           <View style={styles.previewStats}>
             <View style={styles.previewStat}>
-              <Leaf color="#E2E8F0" size={14} />
+              <Leaf color="#FFFFFF" size={14} />
               <Text style={styles.previewStatVal}>{impactScore}</Text>
               <Text style={styles.previewStatLbl}>score</Text>
             </View>
             <View style={styles.previewStat}>
-              <Recycle color="#E2E8F0" size={14} />
+              <Recycle color="#FFFFFF" size={14} />
               <Text style={styles.previewStatVal}>{totalReturns}</Text>
               <Text style={styles.previewStatLbl}>returns</Text>
             </View>
             <View style={styles.previewStat}>
-              <Flame color="#FB923C" size={14} fill="#FB923C" />
+              <Flame color="#FBBF24" size={14} fill="#FBBF24" />
               <Text style={styles.previewStatVal}>{streakCount}</Text>
               <Text style={styles.previewStatLbl}>streak</Text>
             </View>
@@ -214,7 +209,7 @@ export default function ShareInviteSheet({
           ) : (
             <Text style={styles.previewFoot}>Supporting SDG 12 · Responsible Consumption</Text>
           )}
-        </LinearGradient>
+        </View>
 
         <View style={[styles.linkBox, { backgroundColor: c.inputBg, borderColor: c.surfaceBorder }]}>
           <Text style={[styles.linkLabel, { color: c.textFaint }]}>YOUR REFERRAL LINK</Text>
@@ -332,7 +327,8 @@ const styles = StyleSheet.create({
     ...typography.subtitle,
   },
   previewCard: {
-    borderRadius: RADIUS,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
     padding: 18,
     marginBottom: 16,
   },
@@ -343,7 +339,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   previewBrandText: {
-    color: '#E2E8F0',
+    color: '#FFFFFF',
     fontSize: 14,
     letterSpacing: 0.5,
     ...typography.sectionTitle,

@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import { Flame, ClipboardList } from 'lucide-react-native';
 import { useThemeColors } from '@/src/store/useThemeStore';
+import PinnedScreenHeader from '@/components/PinnedScreenHeader';
 import DailyPulsePanel from '@/components/surveys/DailyPulsePanel';
 import ResearchSurveyPanel from '@/components/surveys/ResearchSurveyPanel';
+import { geist } from '@/src/theme/fonts';
 
 type SurveyTab = 'pulse' | 'research';
 
@@ -20,29 +23,33 @@ export default function SurveyScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>
-      <Stack.Screen options={{ title: 'Community Survey' }} />
+      <PinnedScreenHeader showBack title="Community Survey" />
 
-      <View style={[styles.tabBar, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-        <TouchableOpacity
+      <View style={[styles.tabBar, { backgroundColor: c.muted }]}>
+        <Pressable
           style={[styles.tab, tab === 'pulse' && { backgroundColor: c.accent }]}
           onPress={() => setTab('pulse')}
+          android_ripple={null}
           accessibilityRole="tab"
           accessibilityState={{ selected: tab === 'pulse' }}
         >
-          <Text style={[styles.tabText, { color: tab === 'pulse' ? c.onAccent : c.textSecondary }]}>
+          <Flame size={14} color={tab === 'pulse' ? c.onAccent : c.textMuted} strokeWidth={2} />
+          <Text style={[styles.tabText, { color: tab === 'pulse' ? c.onAccent : c.textMuted }]}>
             Daily Pulse
           </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
+        </Pressable>
+        <Pressable
           style={[styles.tab, tab === 'research' && { backgroundColor: c.accent }]}
           onPress={() => setTab('research')}
+          android_ripple={null}
           accessibilityRole="tab"
           accessibilityState={{ selected: tab === 'research' }}
         >
-          <Text style={[styles.tabText, { color: tab === 'research' ? c.onAccent : c.textSecondary }]}>
-            Research Survey
+          <ClipboardList size={14} color={tab === 'research' ? c.onAccent : c.textMuted} strokeWidth={2} />
+          <Text style={[styles.tabText, { color: tab === 'research' ? c.onAccent : c.textMuted }]}>
+            Research
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {tab === 'pulse' ? <DailyPulsePanel /> : <ResearchSurveyPanel />}
@@ -55,18 +62,20 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     marginHorizontal: 16,
-    marginTop: 12,
+    marginTop: 4,
     marginBottom: 8,
     padding: 4,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 14,
     gap: 4,
   },
   tab: {
     flex: 1,
+    flexDirection: 'row',
     paddingVertical: 10,
-    borderRadius: 9,
+    borderRadius: 11,
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
   },
-  tabText: { fontSize: 13, fontWeight: '700' },
+  tabText: { fontSize: 13, ...geist('600') },
 });
