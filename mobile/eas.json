@@ -5,8 +5,13 @@
   "build": {
     "preview": {
       "distribution": "internal",
+      "environment": "preview",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://reloop-tracking-app.onrender.com",
+        "EXPO_PUBLIC_WEB_URL": "https://reloop-tracking-app.onrender.com"
       }
     },
     "production": {

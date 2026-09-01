@@ -144,8 +144,8 @@ export default function ResearchSurveyPanel() {
   }
 
   if (status?.completed || phase === 'complete') {
-    const sectionA = results?.sectionAverages.behavioralIntentions ?? 0;
-    const sectionB = results?.sectionAverages.communityResilience ?? 0;
+    const sectionA = results?.sectionAverages?.behavioralIntentions ?? 0;
+    const sectionB = results?.sectionAverages?.communityResilience ?? 0;
 
     return (
       <ScrollView style={[styles.container, { backgroundColor: c.bg }]} contentContainerStyle={styles.completedContent}>

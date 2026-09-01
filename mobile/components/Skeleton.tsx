@@ -4,7 +4,7 @@ import { useThemeColors } from '@/src/store/useThemeStore';
 
 interface SkeletonProps {
   width?: number | string;
-  height?: number;
+  height?: number | string;
   borderRadius?: number;
   style?: ViewStyle;
 }
@@ -29,7 +29,7 @@ export function Skeleton({ width = '100%', height = 16, borderRadius = 8, style 
       style={[
         {
           width: width as any,
-          height,
+          height: height as any,
           borderRadius,
           backgroundColor: c.surfaceBorder,
           opacity,

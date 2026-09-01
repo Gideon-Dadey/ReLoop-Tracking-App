@@ -26,10 +26,9 @@ export function withDistance<T extends { location?: { lat: number; lng: number }
   lng?: number,
 ): (T & { distanceKm?: number })[] {
   if (lat == null || lng == null) return items;
-  return items
-    .map((item) => {
-      if (item.location?.lat == null || item.location?.lng == null) return item;
-      return { ...item, distanceKm: haversineKm(lat, lng, item.location.lat, item.location.lng) };
-    })
-    .sort((a, b) => (a.distanceKm ?? Number.POSITIVE_INFINITY) - (b.distanceKm ?? Number.POSITIVE_INFINITY));
+  const mapped: (T & { distanceKm?: number })[] = items.map((item) => {
+    if (item.location?.lat == null || item.location?.lng == null) return item;
+    return { ...item, distanceKm: haversineKm(lat, lng, item.location.lat, item.location.lng) };
+  });
+  return mapped.sort((a, b) => (a.distanceKm ?? Number.POSITIVE_INFINITY) - (b.distanceKm ?? Number.POSITIVE_INFINITY));
 }

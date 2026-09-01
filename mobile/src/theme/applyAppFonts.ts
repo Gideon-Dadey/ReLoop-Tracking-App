@@ -12,10 +12,11 @@ export function applyAppFonts() {
   applied = true;
 
   const patchTextComponent = (Component: typeof Text | typeof TextInput) => {
-    const render = Component.render;
+    const comp = Component as any;
+    const render = comp.render;
     if (!render) return;
 
-    Component.render = function patchedRender(props: { style?: TextStyle | TextStyle[] }, ref: unknown) {
+    comp.render = function patchedRender(props: { style?: TextStyle | TextStyle[] }, ref: unknown) {
       const flat = StyleSheet.flatten(props.style) as TextStyle | undefined;
       const fontFamily = flat?.fontFamily ?? fontFamilyForWeight(flat?.fontWeight ?? '400');
       return render.call(this, {
@@ -28,14 +29,14 @@ export function applyAppFonts() {
   patchTextComponent(Text);
   patchTextComponent(TextInput);
 
-  const textDefaults = Text.defaultProps ?? {};
-  Text.defaultProps = {
+  const textDefaults = (Text as any).defaultProps ?? {};
+  (Text as any).defaultProps = {
     ...textDefaults,
     style: StyleSheet.flatten([textDefaults.style, { fontFamily: fonts.regular }]),
   };
 
-  const inputDefaults = TextInput.defaultProps ?? {};
-  TextInput.defaultProps = {
+  const inputDefaults = (TextInput as any).defaultProps ?? {};
+  (TextInput as any).defaultProps = {
     ...inputDefaults,
     style: StyleSheet.flatten([inputDefaults.style, { fontFamily: fonts.regular }]),
   };
