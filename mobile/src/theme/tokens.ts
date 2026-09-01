@@ -15,7 +15,7 @@ export const lightColors = {
   warning: '#F59E0B',
   success: '#059669',
   sidebar: '#F8FAFC',
-  splashBackground: '#000000',
+  splashBackground: '#ffffff',
   surfaceElevated: '#ffffff',
   surfaceHover: '#F8FAFC',
 } as const;

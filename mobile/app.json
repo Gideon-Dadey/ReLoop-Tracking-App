@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/reloop-star.png",
       "resizeMode": "contain",
-      "backgroundColor": "#000000"
+      "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true,
@@ -20,7 +20,7 @@
       "package": "com.reloop.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/reloop-star.png",
-        "backgroundColor": "#000000"
+        "backgroundColor": "#ffffff"
       },
       "predictiveBackGestureEnabled": false,
       "edgeToEdgeEnabled": true,
@@ -40,12 +40,12 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#000000",
+          "backgroundColor": "#ffffff",
           "image": "./assets/reloop-star.png",
           "imageWidth": 180,
           "resizeMode": "contain",
           "dark": {
-            "backgroundColor": "#000000",
+            "backgroundColor": "#ffffff",
             "image": "./assets/reloop-star.png"
           }
         }
