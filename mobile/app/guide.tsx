@@ -184,8 +184,7 @@ export default function GuideScreen() {
           </View>
         </CardSurface>
 
-        <Text style={[styles.groupLabel, { color: c.textFaint }]}>THE RETURN</Text>
-        <CardSurface style={styles.stepCard}>
+        <CardSurface style={[styles.stepCard, { marginTop: 16 }]}>
           {STEPS.map((step, index) => (
             <StepRow
               key={step.title}
@@ -203,8 +202,7 @@ export default function GuideScreen() {
           </Text>
         </View>
 
-        <Text style={[styles.groupLabel, { color: c.textFaint }]}>QUESTIONS</Text>
-        <CardSurface>
+        <CardSurface style={{ marginTop: 16 }}>
           {FAQS.map((faq, index) => (
             <FaqRow
               key={faq.question}

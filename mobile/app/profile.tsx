@@ -7,10 +7,11 @@ import {
 import { useAuthStore } from '@/src/store/useAuthStore';
 import { useThemeColors, useThemeStore } from '@/src/store/useThemeStore';
 import { apiService } from '@/src/api/service';
+import { useRouter } from 'expo-router';
 import {
   LogOut, Edit2, Check, X,
   Camera, Key, Sun, Moon, ShieldCheck,
-  Bell, Heart, HelpCircle, Star, Leaf, Info, Package,
+  Bell, Heart, HelpCircle, Star, Leaf, Info, Package, MapPin,
 } from 'lucide-react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import RewardsSection from '@/components/RewardsSection';
@@ -29,6 +30,7 @@ import StatusBadge from '@/components/StatusBadge';
 const RADIUS = 14;
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { user, updateUser, logout } = useAuthStore();
   const { mode, toggleTheme } = useThemeStore();
   const c = useThemeColors();
@@ -278,8 +280,13 @@ export default function ProfileScreen() {
         <RewardsSection />
 
         <View style={styles.sectionMargin}>
-          <Text style={[styles.groupLabel, { color: c.textFaint }]}>ACCOUNT</Text>
           <CardSurface style={styles.groupCard}>
+            <MenuRow
+              icon={MapPin}
+              title="Nearby Drop-off Points"
+              well="sky"
+              onPress={() => router.push('/map')}
+            />
             <MenuRow
               icon={ShieldCheck}
               title="Security & Privacy"
@@ -304,7 +311,6 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.sectionMargin}>
-          <Text style={[styles.groupLabel, { color: c.textFaint }]}>SUPPORT & SOCIAL</Text>
           <CardSurface style={styles.groupCard}>
             <MenuRow icon={Heart} title="Tell a Friend" well="rose" onPress={handleShare} />
             <MenuRow icon={HelpCircle} title="Help Center" well="violet" onPress={showHelp} />
@@ -322,8 +328,6 @@ export default function ProfileScreen() {
           <LogOut color="#EF4444" size={20} strokeWidth={2} />
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
-
-        <View style={{ height: 100 }} />
       </ScrollView>
 
       <Modal visible={passModalVisible} animationType="fade" transparent>
@@ -394,7 +398,7 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { paddingHorizontal: 16, paddingBottom: 40 },
+  scrollContent: { paddingHorizontal: 16, paddingBottom: 24 },
   themeBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
 
   heroCard: {
@@ -430,16 +434,16 @@ const styles = StyleSheet.create({
   statName: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 1 },
   statDivider: { width: 1, height: '60%', alignSelf: 'center', opacity: 0.3 },
 
-  sectionMargin: { marginTop: 32 },
+  sectionMargin: { marginTop: 16 },
   groupLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 1.2, marginBottom: 12, paddingLeft: 4 },
   groupCard: { overflow: 'hidden' },
 
   logoutBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 18, borderRadius: RADIUS, gap: 10, marginTop: 40,
+    paddingVertical: 14, borderRadius: RADIUS, gap: 10, marginTop: 24,
     borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.1)',
   },
-  logoutText: { color: '#EF4444', fontSize: 17, fontWeight: '800' },
+  logoutText: { color: '#EF4444', fontSize: 16, fontWeight: '700' },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 20 },
   modalContent: {

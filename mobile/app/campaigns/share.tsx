@@ -6,21 +6,20 @@ import PinnedScreenHeader from '@/components/PinnedScreenHeader';
 import { useQuery } from '@tanstack/react-query';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
-import { Share2, Leaf, Recycle, Flame, Download } from 'lucide-react-native';
+import { Share2, Leaf, Recycle, Flame } from 'lucide-react-native';
 import { useThemeColors, colors } from '@/src/store/useThemeStore';
 import { useAuthStore } from '@/src/store/useAuthStore';
 import { apiService, CampaignPlatform } from '@/src/api/service';
-import { Skeleton } from '@/components/Skeleton';
 import { PlatformIcon, PLATFORM_META } from '@/components/PlatformIcon';
 
 const RADIUS = 14;
 
-type CardTheme = 'dark' | 'light' | 'slate';
+type CardTheme = 'dark' | 'light' | 'green';
 
 const CARD_THEMES: Record<CardTheme, { bg: string; text: string; accent: string; secondary: string }> = {
-  dark: { bg: '#000000', text: '#ffffff', accent: '#ffffff', secondary: '#a1a1aa' },
+  dark: { bg: colors.dark.surface, text: colors.dark.text, accent: colors.dark.accent, secondary: colors.dark.textMuted },
   light: { bg: colors.light.surface, text: colors.light.text, accent: colors.light.accent, secondary: colors.light.textMuted },
-  slate: { bg: '#111111', text: '#ffffff', accent: '#ffffff', secondary: '#a1a1aa' },
+  green: { bg: '#064E3B', text: '#ECFDF5', accent: '#34D399', secondary: '#A7F3D0' },
 };
 
 function ImpactCard({ theme, user }: { theme: CardTheme; user: any }) {
@@ -92,8 +91,8 @@ export default function ShareScreen() {
   const user = useAuthStore((s) => s.user);
   const viewShotRef = useRef<any>(null);
   const campaignShotRef = useRef<any>(null);
-  const [selectedTheme, setSelectedTheme] = useState<CardTheme>('dark');
-  const [shareType, setShareType] = useState<'impact' | 'campaign'>('impact');
+  const [selectedTheme, setSelectedTheme] = useState<CardTheme>('light');
+  const [shareType, setShareType] = useState<'impact' | 'campaign'>('campaign');
 
   const { data: stats } = useQuery({
     queryKey: ['campaign-stats'],
@@ -124,71 +123,71 @@ export default function ShareScreen() {
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>
       <PinnedScreenHeader showBack title="Share Your Impact" />
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
 
-      {/* Type Selector */}
-      <View style={styles.typeRow}>
-        <TouchableOpacity
-          style={[styles.typeBtn, shareType === 'impact' && { backgroundColor: c.accent }]}
-          onPress={() => setShareType('impact')}
-        >
-          <Text style={[styles.typeText, { color: shareType === 'impact' ? c.onAccent : c.textSecondary }]}>My Impact</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.typeBtn, shareType === 'campaign' && { backgroundColor: c.accent }]}
-          onPress={() => setShareType('campaign')}
-        >
-          <Text style={[styles.typeText, { color: shareType === 'campaign' ? c.onAccent : c.textSecondary }]}>Top Campaign</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Theme Selector */}
-      <Text style={[styles.label, { color: c.textSecondary }]}>Card Style</Text>
-      <View style={styles.themeRow}>
-        {(['dark', 'light', 'slate'] as CardTheme[]).map((t) => (
+        {/* Type Selector */}
+        <View style={styles.typeRow}>
           <TouchableOpacity
-            key={t}
-            style={[
-              styles.themeChip,
-              { backgroundColor: CARD_THEMES[t].bg, borderColor: selectedTheme === t ? c.accent : c.surfaceBorder },
-              selectedTheme === t && { borderWidth: 2 },
-            ]}
-            onPress={() => setSelectedTheme(t)}
+            style={[styles.typeBtn, shareType === 'impact' && { backgroundColor: c.accent }]}
+            onPress={() => setShareType('impact')}
           >
-            <Text style={[styles.themeLabel, { color: CARD_THEMES[t].text }]}>
-              {t.charAt(0).toUpperCase() + t.slice(1)}
-            </Text>
+            <Text style={[styles.typeText, { color: shareType === 'impact' ? '#FFFFFF' : c.textSecondary }]}>My Impact</Text>
           </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Preview */}
-      {shareType === 'impact' && (
-        <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 1 }}>
-          <ImpactCard theme={selectedTheme} user={user} />
-        </ViewShot>
-      )}
-
-      {shareType === 'campaign' && topCampaign && (
-        <ViewShot ref={campaignShotRef} options={{ format: 'png', quality: 1 }}>
-          <CampaignHighlightCard theme={selectedTheme} campaign={topCampaign} />
-        </ViewShot>
-      )}
-
-      {shareType === 'campaign' && !topCampaign && (
-        <View style={[styles.emptyCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-          <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-            No evaluated campaigns yet. Evaluate a campaign to create a highlight card!
-          </Text>
+          <TouchableOpacity
+            style={[styles.typeBtn, shareType === 'campaign' && { backgroundColor: c.accent }]}
+            onPress={() => setShareType('campaign')}
+          >
+            <Text style={[styles.typeText, { color: shareType === 'campaign' ? '#FFFFFF' : c.textSecondary }]}>Top Campaign</Text>
+          </TouchableOpacity>
         </View>
-      )}
 
-      {/* Share Button */}
-      <TouchableOpacity style={[styles.shareBtn, { backgroundColor: c.accent }]} onPress={handleShare}>
-        <Share2 size={20} color={c.onAccent} />
-        <Text style={[styles.shareBtnText, { color: c.onAccent }]}>Share Card</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        {/* Theme Selector */}
+        <Text style={[styles.label, { color: c.textSecondary }]}>Card Style</Text>
+        <View style={styles.themeRow}>
+          {(['dark', 'light', 'green'] as CardTheme[]).map((t) => (
+            <TouchableOpacity
+              key={t}
+              style={[
+                styles.themeChip,
+                { backgroundColor: CARD_THEMES[t].bg, borderColor: selectedTheme === t ? c.accent : c.surfaceBorder },
+                selectedTheme === t && { borderWidth: 2 },
+              ]}
+              onPress={() => setSelectedTheme(t)}
+            >
+              <Text style={[styles.themeLabel, { color: CARD_THEMES[t].text }]}>
+                {t.charAt(0).toUpperCase() + t.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Preview */}
+        {shareType === 'impact' && (
+          <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 1 }}>
+            <ImpactCard theme={selectedTheme} user={user} />
+          </ViewShot>
+        )}
+
+        {shareType === 'campaign' && topCampaign && (
+          <ViewShot ref={campaignShotRef} options={{ format: 'png', quality: 1 }}>
+            <CampaignHighlightCard theme={selectedTheme} campaign={topCampaign} />
+          </ViewShot>
+        )}
+
+        {shareType === 'campaign' && !topCampaign && (
+          <View style={[styles.emptyCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
+            <Text style={[styles.emptyText, { color: c.textSecondary }]}>
+              No evaluated campaigns yet. Evaluate a campaign to create a highlight card!
+            </Text>
+          </View>
+        )}
+
+        {/* Share Button */}
+        <TouchableOpacity style={[styles.shareBtn, { backgroundColor: c.accent }]} onPress={handleShare}>
+          <Share2 size={20} color="#FFFFFF" />
+          <Text style={styles.shareBtnText}>Share Card</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </View>
   );
 }

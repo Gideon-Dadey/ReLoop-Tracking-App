@@ -1,79 +1,122 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
   View,
   Modal,
+  TouchableOpacity,
   Pressable,
   Animated,
-  Easing,
   useWindowDimensions,
+  Image,
   Alert,
   Platform,
-  Share,
-  Switch,
+  ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import {
+  X,
+  Settings,
+  HelpCircle,
+  Heart,
+  ChevronRight,
+  LogOut,
+  Leaf,
+  Star,
+  Recycle,
+  Flame,
+} from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuthStore } from '@/src/store/useAuthStore';
-import { useThemeColors, useThemeStore } from '@/src/store/useThemeStore';
-import { useNotificationPreferencesStore } from '@/src/store/useNotificationPreferences';
+import { useThemeColors, brand } from '@/src/store/useThemeStore';
 import { typography } from '@/src/theme/fonts';
-import {
-  buildReferralUrl,
-  buildInviteMessage,
-} from '@/src/lib/shareLinks';
+import ShareInviteSheet from '@/components/ShareInviteSheet';
+
+const RADIUS = 16;
+const APP_VERSION = '1.2.0';
 
 interface ProfileDrawerProps {
   visible: boolean;
   onClose: () => void;
   impactScore?: number;
+  points?: number;
   streakCount?: number;
   totalReturns?: number;
+  plasticSaved?: number;
+}
+
+interface DrawerActionProps {
+  icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
+  title: string;
+  subtitle: string;
+  onPress: () => void;
+}
+
+function DrawerAction({ icon: Icon, title, subtitle, onPress }: DrawerActionProps) {
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.88} accessibilityRole="button">
+      <LinearGradient
+        colors={[brand.tealDeep, '#0A1614']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.actionCard}
+      >
+        <View style={styles.actionIconWrap}>
+          <Icon size={22} color={brand.tealSoft} strokeWidth={2} />
+        </View>
+        <View style={styles.actionText}>
+          <Text style={styles.actionTitle}>{title}</Text>
+          <Text style={styles.actionSubtitle} numberOfLines={1}>
+            {subtitle}
+          </Text>
+        </View>
+        <ChevronRight size={20} color={brand.tealSoft} strokeWidth={2.5} />
+      </LinearGradient>
+    </TouchableOpacity>
+  );
 }
 
 export default function ProfileDrawer({
   visible,
   onClose,
   impactScore = 0,
+  points = 0,
   streakCount = 0,
   totalReturns = 0,
+  plasticSaved = 0,
 }: ProfileDrawerProps) {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const c = useThemeColors();
-  const mode = useThemeStore((s) => s.mode);
-  const toggleTheme = useThemeStore((s) => s.toggleTheme);
-  const notificationsEnabled = useNotificationPreferencesStore((s) => s.notificationsEnabled);
-  const setNotificationsEnabled = useNotificationPreferencesStore((s) => s.setNotificationsEnabled);
+  const router = useRouter();
   const { user, logout } = useAuthStore();
+  const [shareSheetVisible, setShareSheetVisible] = React.useState(false);
 
-  const drawerWidth = Math.min(width * 0.75, 320);
-  const [mounted, setMounted] = React.useState(false);
+  const drawerWidth = Math.min(width * 0.88, 360);
   const slideAnim = useRef(new Animated.Value(drawerWidth)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const closingRef = useRef(false);
 
-  const referralUrl = user ? buildReferralUrl(user.userName) : '';
-  const inviteMessage = user
-    ? buildInviteMessage(user.userName, impactScore, totalReturns, streakCount, referralUrl)
-    : '';
+  const avatarUrl = useMemo(
+    () =>
+      user?.avatar ||
+      `https://api.dicebear.com/7.x/initials/png?seed=${user?.userName || 'User'}&backgroundColor=14B8A6`,
+    [user],
+  );
 
   const animateIn = useCallback(() => {
     slideAnim.setValue(drawerWidth);
     fadeAnim.setValue(0);
     Animated.parallel([
-      Animated.spring(slideAnim, {
+      Animated.timing(slideAnim, {
         toValue: 0,
+        duration: 280,
         useNativeDriver: true,
-        damping: 28,
-        stiffness: 240,
-        mass: 0.88,
       }),
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 320,
-        easing: Easing.out(Easing.cubic),
+        duration: 280,
         useNativeDriver: true,
       }),
     ]).start();
@@ -81,23 +124,18 @@ export default function ProfileDrawer({
 
   const animateOut = useCallback(
     (then?: () => void) => {
-      if (closingRef.current) return;
-      closingRef.current = true;
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: drawerWidth,
-          duration: 280,
-          easing: Easing.in(Easing.cubic),
+          duration: 240,
           useNativeDriver: true,
         }),
         Animated.timing(fadeAnim, {
           toValue: 0,
           duration: 240,
-          easing: Easing.in(Easing.quad),
           useNativeDriver: true,
         }),
       ]).start(({ finished }) => {
-        closingRef.current = false;
         if (finished) then?.();
       });
     },
@@ -105,26 +143,36 @@ export default function ProfileDrawer({
   );
 
   useEffect(() => {
-    if (!visible) return;
-    closingRef.current = false;
-    setMounted(true);
+    if (visible) {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      animateIn();
+    } else {
+      setShareSheetVisible(false);
+    }
+  }, [visible, animateIn]);
+
+  const closeDrawer = useCallback(() => {
+    animateOut(onClose);
+  }, [animateOut, onClose]);
+
+  const navigateThenClose = useCallback(
+    (href: string) => {
+      animateOut(() => {
+        onClose();
+        router.push(href as any);
+      });
+    },
+    [animateOut, onClose, router],
+  );
+
+  const openShareSheet = useCallback(() => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    const frame = requestAnimationFrame(() => {
-      requestAnimationFrame(animateIn);
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [visible, animateIn]);
-
-  const finishClose = useCallback(() => {
-    setMounted(false);
-    onClose();
-  }, [onClose]);
-
-  const closeDrawer = useCallback(() => {
-    animateOut(finishClose);
-  }, [animateOut, finishClose]);
+    setShareSheetVisible(true);
+  }, []);
 
   const showHelp = useCallback(() => {
     Alert.alert(
@@ -134,35 +182,26 @@ export default function ProfileDrawer({
     );
   }, []);
 
-  const handleShare = useCallback(async () => {
-    try {
-      await Share.share(
-        Platform.OS === 'ios'
-          ? { url: referralUrl, message: inviteMessage }
-          : { message: inviteMessage, title: 'Join me on ReLoop' },
-      );
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : 'Sharing is not available on this device.';
-      Alert.alert('Share failed', msg);
-    }
-  }, [inviteMessage, referralUrl]);
+  const handleSignOut = useCallback(() => {
+    Alert.alert('Sign out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign out',
+        style: 'destructive',
+        onPress: () => {
+          animateOut(() => {
+            onClose();
+            logout();
+          });
+        },
+      },
+    ]);
+  }, [animateOut, logout, onClose]);
 
   if (!user) return null;
 
-  const switchTrack = {
-    false: mode === 'dark' ? '#3A3A3C' : '#D0D7E2',
-    true: mode === 'dark' ? '#FFFFFF' : '#000000',
-  };
-  const switchThumb = mode === 'dark' ? '#000000' : '#FFFFFF';
-
   return (
-    <Modal
-      visible={mounted}
-      transparent
-      animationType="none"
-      statusBarTranslucent
-      onRequestClose={closeDrawer}
-    >
+    <Modal visible={visible} transparent animationType="none" onRequestClose={closeDrawer}>
       <View style={styles.root}>
         <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]}>
           <Pressable style={StyleSheet.absoluteFill} onPress={closeDrawer} accessibilityLabel="Close menu" />
@@ -173,71 +212,121 @@ export default function ProfileDrawer({
             styles.drawer,
             {
               width: drawerWidth,
-              backgroundColor: c.bg,
-              paddingTop: insets.top + 18,
-              paddingBottom: Math.max(insets.bottom, 24),
+              backgroundColor: c.surface,
+              paddingTop: insets.top + 12,
+              paddingBottom: Math.max(insets.bottom, 16),
               transform: [{ translateX: slideAnim }],
             },
           ]}
         >
-          <Text style={[styles.title, { color: c.heading }]}>Options</Text>
-          <View style={[styles.rule, { backgroundColor: c.surfaceBorder }]} />
-
-          <Pressable
-            onPress={() => {
-              closeDrawer();
-              setTimeout(showHelp, 260);
-            }}
-            style={styles.row}
-            accessibilityRole="button"
-            accessibilityLabel="Help Center"
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+            bounces={false}
           >
-            <Text style={[styles.rowLabel, { color: c.text }]}>Help Center</Text>
-          </Pressable>
+            <View style={styles.headerRow}>
+              <View style={styles.profileRow}>
+                <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+                <View style={styles.profileText}>
+                  <Text style={[styles.userName, { color: c.text }]} numberOfLines={1}>
+                    {user.userName}
+                  </Text>
+                  <Text style={[styles.userEmail, { color: c.textMuted }]} numberOfLines={1}>
+                    {user.email}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={closeDrawer}
+                style={[styles.closeBtn, { backgroundColor: c.inputBg }]}
+                accessibilityLabel="Close"
+                accessibilityRole="button"
+              >
+                <X color={c.text} size={22} strokeWidth={2} />
+              </TouchableOpacity>
+            </View>
 
-          <View style={styles.row}>
-            <Text style={[styles.rowLabel, { color: c.text }]}>Notifications</Text>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={setNotificationsEnabled}
-              trackColor={switchTrack}
-              thumbColor={switchThumb}
-              ios_backgroundColor={switchTrack.false}
-            />
-          </View>
+            {/* Impact member card (ReLoop equivalent of QR identity block) */}
+            <LinearGradient
+              colors={[c.accentSoft, c.surface]}
+              style={[styles.impactCard, { borderColor: c.surfaceBorder }]}
+            >
+              <View style={styles.impactCardHeader}>
+                <Leaf color={c.accent} size={18} strokeWidth={2.2} />
+                <Text style={[styles.impactCardLabel, { color: c.accent }]}>YOUR IMPACT</Text>
+              </View>
+              <Text style={[styles.impactScore, { color: c.text }]}>{impactScore}</Text>
+              <Text style={[styles.impactSub, { color: c.textMuted }]}>Impact score</Text>
+              <View style={[styles.impactStats, { borderTopColor: c.surfaceBorder }]}>
+                <View style={styles.impactStat}>
+                  <Star color="#FBBF24" size={14} fill="#FBBF24" />
+                  <Text style={[styles.impactStatVal, { color: c.text }]}>{points}</Text>
+                  <Text style={[styles.impactStatLbl, { color: c.textFaint }]}>pts</Text>
+                </View>
+                <View style={[styles.impactDivider, { backgroundColor: c.surfaceBorder }]} />
+                <View style={styles.impactStat}>
+                  <Recycle color={c.accent} size={14} />
+                  <Text style={[styles.impactStatVal, { color: c.text }]}>{totalReturns}</Text>
+                  <Text style={[styles.impactStatLbl, { color: c.textFaint }]}>returns</Text>
+                </View>
+                <View style={[styles.impactDivider, { backgroundColor: c.surfaceBorder }]} />
+                <View style={styles.impactStat}>
+                  <Flame color="#F97316" size={14} fill="#F97316" />
+                  <Text style={[styles.impactStatVal, { color: c.text }]}>{streakCount}</Text>
+                  <Text style={[styles.impactStatLbl, { color: c.textFaint }]}>streak</Text>
+                </View>
+              </View>
+            </LinearGradient>
 
-          <View style={styles.row}>
-            <Text style={[styles.rowLabel, { color: c.text }]}>Dark mode</Text>
-            <Switch
-              value={mode === 'dark'}
-              onValueChange={toggleTheme}
-              trackColor={switchTrack}
-              thumbColor={switchThumb}
-              ios_backgroundColor={switchTrack.false}
-            />
-          </View>
+            {/* Actions */}
+            <View style={styles.actions}>
+              <DrawerAction
+                icon={Settings}
+                title="Account Settings"
+                subtitle="Manage profile, security & preferences"
+                onPress={() => navigateThenClose('/profile')}
+              />
+              <DrawerAction
+                icon={HelpCircle}
+                title="Help Center"
+                subtitle="Support, guides & FAQs"
+                onPress={() => {
+                  closeDrawer();
+                  setTimeout(showHelp, 260);
+                }}
+              />
+              <DrawerAction
+                icon={Heart}
+                title="Share ReLoop"
+                subtitle="Invite friends to join the movement"
+                onPress={openShareSheet}
+              />
+            </View>
 
-          <Pressable
-            onPress={handleShare}
-            style={styles.row}
-            accessibilityRole="button"
-            accessibilityLabel="Share ReLoop"
-          >
-            <Text style={[styles.rowLabel, { color: c.text }]}>Share ReLoop</Text>
-          </Pressable>
+            <TouchableOpacity
+              onPress={handleSignOut}
+              style={styles.signOutRow}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Sign out"
+            >
+              <LogOut color={c.accent} size={20} strokeWidth={2} />
+              <Text style={[styles.signOutText, { color: c.accent }]}>Sign out</Text>
+            </TouchableOpacity>
 
-          <Pressable
-            onPress={() => {
-              setMounted(false);
-              onClose();
-              logout();
-            }}
-            style={styles.row}
-            accessibilityRole="button"
-            accessibilityLabel="Sign out"
-          >
-            <Text style={[styles.rowLabel, { color: c.danger }]}>Sign out</Text>
-          </Pressable>
+            <Text style={[styles.version, { color: c.textFaint }]}>Version {APP_VERSION}</Text>
+          </ScrollView>
+
+          <ShareInviteSheet
+            visible={shareSheetVisible}
+            onClose={() => setShareSheetVisible(false)}
+            userName={user.userName}
+            impactScore={impactScore}
+            streakCount={streakCount}
+            totalReturns={totalReturns}
+            plasticSaved={plasticSaved}
+            onShareImpactCard={() => navigateThenClose('/campaigns/share')}
+          />
         </Animated.View>
       </View>
     </Modal>
@@ -256,33 +345,160 @@ const styles = StyleSheet.create({
   },
   drawer: {
     height: '100%',
-    borderTopLeftRadius: 36,
-    paddingHorizontal: 22,
+    borderTopLeftRadius: RADIUS + 4,
+    borderBottomLeftRadius: RADIUS + 4,
     shadowColor: '#000',
-    shadowOffset: { width: -8, height: 0 },
-    shadowOpacity: 0.28,
-    shadowRadius: 24,
-    elevation: 28,
+    shadowOffset: { width: -4, height: 0 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 24,
+    overflow: 'hidden',
   },
-  title: {
-    fontSize: 20,
-    letterSpacing: -0.3,
-    ...typography.sectionTitle,
-    marginBottom: 14,
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 8,
   },
-  rule: {
-    height: StyleSheet.hairlineWidth,
-    marginBottom: 8,
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
-  row: {
-    minHeight: 56,
+  profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    flex: 1,
+    marginRight: 12,
+  },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+  },
+  profileText: {
+    marginLeft: 14,
+    flex: 1,
+  },
+  userName: {
+    fontSize: 20,
+    letterSpacing: -0.3,
+    ...typography.title,
+  },
+  userEmail: {
+    fontSize: 13,
+    marginTop: 2,
+    ...typography.subtitle,
+  },
+  closeBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  impactCard: {
+    borderRadius: RADIUS,
+    borderWidth: 1,
+    padding: 18,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  impactCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  impactCardLabel: {
+    fontSize: 11,
+    letterSpacing: 1.2,
+    ...typography.label,
+  },
+  impactScore: {
+    fontSize: 42,
+    letterSpacing: -1,
+    ...typography.headline,
+  },
+  impactSub: {
+    fontSize: 13,
+    marginTop: 2,
+    marginBottom: 14,
+    ...typography.subtitle,
+  },
+  impactStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    borderTopWidth: 1,
+    paddingTop: 14,
+  },
+  impactStat: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 2,
+  },
+  impactStatVal: {
+    fontSize: 16,
+    ...typography.sectionTitle,
+  },
+  impactStatLbl: {
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    ...typography.label,
+  },
+  impactDivider: {
+    width: 1,
+    height: 32,
+  },
+  actions: {
+    gap: 12,
+    marginBottom: 28,
+  },
+  actionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: RADIUS,
+    gap: 14,
+  },
+  actionIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionText: {
+    flex: 1,
+  },
+  actionTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    marginBottom: 2,
+    ...typography.sectionTitle,
+  },
+  actionSubtitle: {
+    color: 'rgba(255,255,255,0.72)',
+    fontSize: 12,
+    ...typography.subtitle,
+  },
+  signOutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
     paddingVertical: 14,
   },
-  rowLabel: {
-    fontSize: 17,
-    ...typography.body,
+  signOutText: {
+    fontSize: 16,
+    ...typography.sectionTitle,
+  },
+  version: {
+    textAlign: 'center',
+    fontSize: 12,
+    marginTop: 4,
+    ...typography.subtitle,
   },
 });

@@ -90,6 +90,8 @@ import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 function getStatusBarStyle(segments: string[], mode: ThemeMode): 'light' | 'dark' {
   const inAuth = segments[0] === '(auth)';
   if (inAuth) return 'light';
+  const isHome = segments[0] === '(tabs)' && (!segments[1] || segments[1] === 'index');
+  if (isHome) return 'light';
   return mode === 'dark' ? 'light' : 'dark';
 }
 

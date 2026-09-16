@@ -1,70 +1,33 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { Platform, View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Tabs } from 'expo-router';
-import { House, ClipboardList, MapPin, BarChart3, QrCode } from 'lucide-react-native';
+import { LayoutGrid, Layers, ScanLine, BarChart3, UserRound } from 'lucide-react-native';
 import { useThemeColors } from '@/src/store/useThemeStore';
-import { useTabBarInsets } from '@/src/hooks/useTabBarInsets';
-import { fonts } from '@/src/theme/fonts';
 import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
-import type { LucideIcon } from 'lucide-react-native';
 
-const SCAN_CIRCLE_SIZE = 54;
-const TAB_ICON_SIZE = 22;
+const ScanIcon = ({ color, size }: { color: string; size: number }) => (
+  <ScanLine color={color} size={size} strokeWidth={2.5} />
+);
 
-function TabIcon({
-  focused,
-  color,
-  icon: Icon,
-}: {
-  focused: boolean;
-  color: string;
-  icon: LucideIcon;
-}) {
-  return (
-    <Icon
-      size={TAB_ICON_SIZE}
-      color={color}
-      strokeWidth={focused ? 2.4 : 1.8}
-    />
-  );
-}
-
-const CustomScanButton = ({ onPress, accessibilityState, style }: BottomTabBarButtonProps) => {
+const CustomScanButton = (props: BottomTabBarButtonProps) => {
   const c = useThemeColors();
-  const isFocused = accessibilityState?.selected;
-
   return (
     <TouchableOpacity
-      style={[style, styles.scanTabItem]}
+      style={styles.scanButtonContainer}
       activeOpacity={0.8}
-      onPress={onPress}
-      accessibilityLabel="Scan QR"
+      onPress={props.onPress}
+      accessibilityLabel="Scan container"
       accessibilityRole="button"
-      accessibilityState={accessibilityState}
     >
-      <View style={styles.scanButtonFloating} pointerEvents="none">
-        <View style={[styles.scanButton, { backgroundColor: c.accent }]}>
-          <QrCode size={24} color={c.onAccent} strokeWidth={2.2} />
-        </View>
+      <View style={[styles.scanButton, { backgroundColor: c.accent }]}>
+        <ScanIcon color="#fff" size={26} />
       </View>
-      <View style={styles.iconSlot} />
-      <Text style={[TAB_LABEL_STYLE, styles.scanLabel, { color: isFocused ? c.accent : c.textMuted }]}>
-        Scan QR
-      </Text>
     </TouchableOpacity>
   );
 };
 
-const TAB_LABEL_STYLE = {
-  fontSize: 11,
-  fontWeight: '500' as const,
-  fontFamily: fonts.medium,
-  marginTop: 2,
-};
-
 export default function TabLayout() {
   const c = useThemeColors();
-  const { bottomInset, tabBarHeight } = useTabBarInsets();
 
   return (
     <Tabs
@@ -72,21 +35,19 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: c.accent,
         tabBarInactiveTintColor: c.textMuted,
-        tabBarShowLabel: true,
-        tabBarLabelStyle: TAB_LABEL_STYLE,
+        tabBarShowLabel: false,
         tabBarStyle: {
           backgroundColor: c.tabBg,
-          borderTopWidth: StyleSheet.hairlineWidth,
           borderTopColor: c.tabBorder,
-          height: tabBarHeight,
-          paddingTop: 4,
-          paddingBottom: bottomInset,
-          paddingHorizontal: 0,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          height: Platform.OS === 'ios' ? 84 : 72,
+          paddingTop: 10,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 16,
+          paddingHorizontal: 8,
           elevation: 0,
-          overflow: 'visible',
         },
         tabBarItemStyle: {
-          paddingVertical: 0,
+          paddingVertical: 4,
         },
       }}>
       <Tabs.Screen
@@ -94,7 +55,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon focused={focused} color={color} icon={House} />
+            <LayoutGrid color={color} size={22} strokeWidth={focused ? 2.2 : 1.4} />
           ),
         }}
       />
@@ -103,16 +64,17 @@ export default function TabLayout() {
         options={{
           title: 'Activity',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon focused={focused} color={color} icon={ClipboardList} />
+            <Layers color={color} size={22} strokeWidth={focused ? 2.2 : 1.4} />
           ),
         }}
       />
       <Tabs.Screen
         name="scanner"
         options={{
-          title: 'Scan QR',
-          tabBarShowLabel: false,
-          tabBarIcon: () => null,
+          title: '',
+          tabBarIcon: () => (
+            <ScanIcon color="#fff" size={26} />
+          ),
           tabBarButton: (props) => <CustomScanButton {...props} />,
         }}
       />
@@ -121,17 +83,23 @@ export default function TabLayout() {
         options={{
           title: 'Research',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon focused={focused} color={color} icon={BarChart3} />
+            <BarChart3 color={color} size={22} strokeWidth={focused ? 2.2 : 1.4} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color, focused }) => (
+            <UserRound color={color} size={22} strokeWidth={focused ? 2.2 : 1.4} />
           ),
         }}
       />
       <Tabs.Screen
         name="map"
         options={{
-          title: 'Map',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon focused={focused} color={color} icon={MapPin} />
-          ),
+          href: null,
         }}
       />
     </Tabs>
@@ -139,34 +107,23 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-  scanTabItem: {
-    alignItems: 'center',
+  scanButtonContainer: {
+    top: -20,
     justifyContent: 'center',
-    paddingVertical: 2,
-    overflow: 'visible',
-  },
-  scanButtonFloating: {
-    position: 'absolute',
-    top: -(SCAN_CIRCLE_SIZE / 2 + 4),
-    alignSelf: 'center',
-  },
-  iconSlot: {
-    width: TAB_ICON_SIZE,
-    height: TAB_ICON_SIZE,
+    alignItems: 'center',
+    width: 72,
   },
   scanButton: {
-    width: SCAN_CIRCLE_SIZE,
-    height: SCAN_CIRCLE_SIZE,
-    borderRadius: SCAN_CIRCLE_SIZE / 2,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#10B981',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 6,
-  },
-  scanLabel: {
-    textAlign: 'center',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 8,
   },
 });

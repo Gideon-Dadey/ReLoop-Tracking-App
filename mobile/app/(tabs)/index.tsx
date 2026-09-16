@@ -1,65 +1,38 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  StyleSheet, Text, View, ScrollView, Platform, TouchableOpacity, Pressable,
-  useWindowDimensions, RefreshControl, Animated,
+  StyleSheet, Text, View, ScrollView, Platform, TouchableOpacity,
+  Animated, useWindowDimensions, Image, RefreshControl, ColorValue,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '@/src/store/useAuthStore';
 import { useSyncEngine } from '@/src/hooks/useSyncEngine';
-import { useThemeStore, useThemeColors } from '@/src/store/useThemeStore';
+import { useThemeStore, useThemeColors, brand } from '@/src/store/useThemeStore';
 import { screenHeader } from '@/src/theme/screenHeader';
 import { typography } from '@/src/theme/fonts';
-import { homeWell } from '@/src/theme/chrome';
-import { promoGradients } from '@/src/theme/tokens';
 import { apiService } from '@/src/api/service';
-import type { CoachTip, Transaction } from '@/src/api/service';
+import type { Transaction } from '@/src/api/service';
 import { useQuery } from '@tanstack/react-query';
 import { useFocusEffect } from '@react-navigation/native';
 import {
-  Leaf, Wind, ArrowUpRight, ArrowDownLeft,
+  Leaf, Wind, Star, ArrowUpRight, ArrowDownLeft,
   MapPin, ChevronRight, Bell, Globe, ArrowRight,
   HelpCircle, PlusCircle, Recycle, Trophy,
   Droplets, Car, TreePine, Target, Users, Lightbulb, ClipboardList,
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useNotificationStore } from '@/src/store/useNotificationStore';
 import NotificationCenter from '@/components/NotificationCenter';
 import ProfileDrawer from '@/components/ProfileDrawer';
 import PinnedScreenHeader from '@/components/PinnedScreenHeader';
 import HomeSpotlight, { SpotlightItem } from '@/components/HomeSpotlight';
-import ImpactHeroCard from '@/components/ImpactHeroCard';
+import StreakBadge from '@/components/StreakBadge';
 import { DashboardSkeleton, ButtonLoader } from '@/components/Skeleton';
-import UserAvatar from '@/components/UserAvatar';
 import * as Haptics from 'expo-haptics';
 import { queryKeys } from '@/src/lib/queryKeys';
 
 const RADIUS = 14;
 const PADDING = 16;
-
-function HeaderMenuIcon({ color }: { color: string }) {
-  return (
-    <View style={menuIconStyles.wrap} accessibilityElementsHidden>
-      <View style={[menuIconStyles.bar, menuIconStyles.barLong, { backgroundColor: color }]} />
-      <View style={[menuIconStyles.bar, menuIconStyles.barShort, { backgroundColor: color }]} />
-      <View style={[menuIconStyles.bar, menuIconStyles.barLong, { backgroundColor: color }]} />
-    </View>
-  );
-}
-
-const menuIconStyles = StyleSheet.create({
-  wrap: {
-    width: 18,
-    height: 14,
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-  },
-  bar: {
-    height: 1.75,
-    borderRadius: 999,
-  },
-  barLong: { width: 18, alignSelf: 'stretch' },
-  barShort: { width: 12 },
-});
 
 const ECO_TIPS = [
   { title: 'Rinse, don\'t run', desc: 'A quick rinse uses far less water than leaving the tap on while washing containers.' },
@@ -72,15 +45,17 @@ const ECO_TIPS = [
 ];
 
 export default function Dashboard() {
-  const { user, accessToken } = useAuthStore();
+  const { user, accessToken, logout } = useAuthStore();
   const { queueCount } = useSyncEngine();
   const c = useThemeColors();
   const { mode } = useThemeStore();
+  const pinnedHeaderBg = mode === 'dark' ? c.bg : brand.heroDarkMid;
+  const headerActionBg = 'rgba(255,255,255,0.08)';
+  const headerActionBorder = 'rgba(255,255,255,0.14)';
+  const heroGradient: [ColorValue, ColorValue, ...ColorValue[]] = mode === 'dark'
+    ? [c.bg, c.surface, c.bg]
+    : [brand.heroDarkMid, brand.heroDark, '#071512'];
   const router = useRouter();
-  const borrowWell = homeWell(mode, 'deposit');
-  const returnWell = homeWell(mode, 'withdraw');
-  const mapWell = homeWell(mode, 'goals');
-  const activityWell = homeWell(mode, 'activity');
   const { height: windowHeight } = useWindowDimensions();
   const { data: communityStats, refetch: refetchCommunity } = useQuery({
     queryKey: ['community-stats'],
@@ -114,13 +89,6 @@ export default function Dashboard() {
     queryFn: () => apiService.getProfile(),
     enabled: !!accessToken && !!userId,
     refetchOnMount: 'always' as const,
-  });
-
-  const { data: coachTips = [], refetch: refetchCoach } = useQuery<CoachTip[]>({
-    queryKey: queryKeys.coachRecommendations(userId ?? ''),
-    queryFn: () => apiService.getCoachRecommendations(),
-    enabled: !!accessToken && !!userId,
-    staleTime: 30_000,
   });
 
   const { data: recentActivity = [], refetch: refetchActivity } = useQuery<Transaction[]>({
@@ -174,7 +142,12 @@ export default function Dashboard() {
     [displayUser],
   );
 
-  const firstName = (displayUser?.userName || userData?.userName || 'there').split(' ')[0];
+  const avatarUrl = useMemo(
+    () =>
+      displayUser?.avatar ||
+      `https://api.dicebear.com/7.x/initials/png?seed=${displayUser?.userName || 'User'}&backgroundColor=14B8A6`,
+    [displayUser],
+  );
 
   const recentItems = useMemo(() => recentActivity.slice(0, 2), [recentActivity]);
 
@@ -182,18 +155,6 @@ export default function Dashboard() {
   const closeNotifications = useCallback(() => setNotifVisible(false), []);
   const openProfileDrawer = useCallback(() => setProfileDrawerVisible(true), []);
   const closeProfileDrawer = useCallback(() => setProfileDrawerVisible(false), []);
-  const goToProfile = useCallback(() => router.push('/profile'), [router]);
-  const pageShift = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.spring(pageShift, {
-      toValue: profileDrawerVisible ? -36 : 0,
-      useNativeDriver: true,
-      damping: 28,
-      stiffness: 240,
-      mass: 0.9,
-    }).start();
-  }, [profileDrawerVisible, pageShift]);
   const goToScanner = useCallback(() => { triggerHaptic(); router.push('/scanner'); }, [triggerHaptic, router]);
   const goToCommunity = useCallback(() => router.push('/community'), [router]);
   const goToGuide = useCallback(() => router.push('/guide'), [router]);
@@ -205,13 +166,12 @@ export default function Dashboard() {
     setRefreshing(true);
     await Promise.all([
       refetchStats(),
-      refetchCoach(),
       refetchActivity(),
       refetchCommunity(),
       refetchPulse(),
     ]);
     setRefreshing(false);
-  }, [refetchStats, refetchCoach, refetchActivity, refetchCommunity, refetchPulse]);
+  }, [refetchStats, refetchActivity, refetchCommunity, refetchPulse]);
 
   const weeklyRemaining = useMemo(
     () => Math.max(0, (displayUser?.weeklyGoal?.target ?? 5) - (displayUser?.weeklyGoal?.current ?? 0)),
@@ -229,7 +189,7 @@ export default function Dashboard() {
         eyebrow: 'THIS WEEK',
         title: weeklyRemaining === 1 ? '1 return to hit your goal' : `${weeklyRemaining} returns to hit your goal`,
         description: `You're ${weeklyGoalPercent}% there. Scan a return today and keep your momentum going.`,
-        colors: promoGradients.slate,
+        colors: ['#0F766E', '#14B8A6'],
         icon: Target,
         cta: 'Scan return',
         onPress: goToScanner,
@@ -242,7 +202,7 @@ export default function Dashboard() {
         eyebrow: 'DAILY PULSE',
         title: 'Today\'s check-in',
         description: 'Answer one quick question to keep your streak and share how sustainability is going today.',
-        colors: promoGradients.blue,
+        colors: ['#7C3AED', '#8B5CF6'],
         icon: ClipboardList,
         cta: 'Take pulse',
         onPress: goToSurvey,
@@ -256,7 +216,7 @@ export default function Dashboard() {
         eyebrow: 'COMMUNITY PULSE',
         title: `${plasticKg}kg saved together`,
         description: `${communityStats.totalUsers ?? 0} eco-warriors active. See where you rank on the leaderboard.`,
-        colors: promoGradients.blue,
+        colors: ['#1D4ED8', '#3B82F6'],
         icon: Users,
         cta: 'View leaderboard',
         onPress: goToCommunity,
@@ -268,7 +228,7 @@ export default function Dashboard() {
       eyebrow: 'NEARBY',
       title: 'Find a drop-off point',
       description: 'Locate partner vendors and return spots on the map near you.',
-        colors: promoGradients.slate,
+      colors: ['#0369A1', '#0EA5E9'],
       icon: MapPin,
       cta: 'Open map',
       onPress: goToMap,
@@ -279,7 +239,7 @@ export default function Dashboard() {
       eyebrow: 'ECO TIP',
       title: tipOfDay.title,
       description: tipOfDay.desc,
-        colors: promoGradients.orange,
+      colors: ['#B45309', '#F59E0B'],
       icon: Lightbulb,
       cta: 'Return guide',
       onPress: goToGuide,
@@ -329,108 +289,160 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <View style={[styles.container, { backgroundColor: c.bg }]}>
-      <Animated.View style={{ flex: 1, transform: [{ translateX: pageShift }] }}>
+    <View style={[styles.container, { backgroundColor: pinnedHeaderBg }]}>
+      <StatusBar style="light" />
       {/* Pinned top bar — native pattern: greeting stays fixed while content scrolls */}
-      <PinnedScreenHeader backgroundColor={c.bg} horizontalPadding={0}>
+      <PinnedScreenHeader backgroundColor={pinnedHeaderBg} horizontalPadding={0}>
         <View style={[styles.headerRow, { paddingHorizontal: PADDING }]}>
-          <Pressable
-            style={({ pressed }) => [styles.headerLead, pressed && styles.headerLeadPressed]}
-            onPress={goToProfile}
-            android_ripple={null}
-            accessibilityRole="button"
-            accessibilityLabel="Open settings"
-          >
-            <UserAvatar
-              name={displayUser?.userName}
-              uri={displayUser?.avatar}
-              size="sm"
-              verified={(displayUser?.impact?.totalReturns ?? 0) > 0}
-            />
-            <View style={styles.headerTextBlock}>
-              <Text style={[styles.greeting, { color: c.heading }]} numberOfLines={1}>
-                Welcome, {firstName}
-              </Text>
-              <Text style={[styles.headerMeta, { color: c.textMuted }]} numberOfLines={1}>
-                Tap to manage your profile
-              </Text>
-            </View>
-          </Pressable>
+          <View style={styles.headerTextBlock}>
+            <Text style={styles.date}>
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase()}
+            </Text>
+            <Text style={styles.greeting}>
+              Hi, {(userData?.userName || 'there').split(' ')[0]}
+            </Text>
+          </View>
           <View style={styles.headerActions}>
             <TouchableOpacity
               onPress={openNotifications}
-              style={[styles.headerIconBtn, { backgroundColor: c.muted, borderColor: c.surfaceBorder }]}
+              style={[
+                styles.headerActionBtn,
+                { backgroundColor: headerActionBg, borderColor: headerActionBorder },
+              ]}
               accessibilityLabel="Notifications"
               accessibilityRole="button"
-              activeOpacity={0.82}
+              activeOpacity={0.7}
             >
-              <Bell color={c.text} size={18} strokeWidth={1.75} />
+              <Bell color="rgba(255,255,255,0.9)" size={20} strokeWidth={1.8} />
               {unreadCount > 0 && (
-                <View style={[styles.badge, { backgroundColor: c.accent, borderColor: c.bg }]}>
-                  <Text style={[styles.badgeText, { color: c.onAccent }]}>
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </Text>
+                <View style={[styles.badge, { backgroundColor: c.accent, borderColor: pinnedHeaderBg }]}>
+                  <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
                 </View>
               )}
             </TouchableOpacity>
             <TouchableOpacity
               onPress={openProfileDrawer}
-              style={[styles.headerIconBtn, { backgroundColor: c.muted, borderColor: c.surfaceBorder }]}
-              accessibilityLabel="Open menu"
+              style={[
+                styles.headerActionBtn,
+                styles.avatarBtn,
+                { borderColor: c.accent + '90', backgroundColor: headerActionBg },
+              ]}
+              accessibilityLabel="Open account menu"
               accessibilityRole="button"
-              activeOpacity={0.82}
+              activeOpacity={0.7}
             >
-              <HeaderMenuIcon color={c.text} />
+              <Image source={{ uri: avatarUrl }} style={styles.headerAvatar} />
             </TouchableOpacity>
           </View>
         </View>
       </PinnedScreenHeader>
 
       <ScrollView
-        style={[styles.scrollView, { backgroundColor: c.bg }]}
+        style={[styles.scrollView, { backgroundColor: pinnedHeaderBg }]}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.accent} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#FFFFFF"
+            colors={['#10B981', '#FFFFFF']}
+            progressBackgroundColor={pinnedHeaderBg}
+          />
         }
       >
-        <View style={{ backgroundColor: c.bg, flex: 1, paddingBottom: 16, minHeight: windowHeight * 0.7 }}>
-          <View style={{ paddingHorizontal: PADDING, marginTop: 4 }}>
-            <ImpactHeroCard
-              score={impactScore}
-              plasticKg={plasticSaved}
-              co2Kg={co2Saved}
-              streakCount={displayUser?.streakCount || 0}
-              weeklyCurrent={displayUser?.weeklyGoal?.current || 0}
-              weeklyTarget={displayUser?.weeklyGoal?.target || 5}
-              weeklyPercent={weeklyGoalPercent}
-            />
-          </View>
+        {/* Native pull-to-refresh overscroll top extender */}
+        <View
+          style={{
+            position: 'absolute',
+            top: -1500,
+            left: 0,
+            right: 0,
+            height: 1500,
+            backgroundColor: pinnedHeaderBg,
+          }}
+        />
 
-          <View style={[styles.quickActionsRow, { paddingHorizontal: PADDING }]}>
-            <TouchableOpacity style={styles.wellAction} onPress={goToScanner} accessibilityLabel="Borrow a container" accessibilityRole="button" activeOpacity={0.82}>
-              <View style={[styles.actionWell, { backgroundColor: borrowWell.bg }]}>
-                <PlusCircle color={borrowWell.icon} size={26} strokeWidth={2} />
+        <LinearGradient
+          colors={heroGradient}
+          style={{ paddingBottom: 44, paddingHorizontal: PADDING, overflow: 'hidden' }}
+        >
+          <View style={styles.mainCardContainer}>
+            <LinearGradient
+              colors={[c.accentSoft, 'rgba(0,0,0,0)']}
+              style={[styles.heroCard, { borderColor: c.accent + '26' }]}
+            >
+              <View style={styles.heroContent}>
+                <View style={[styles.impactScorePill, { backgroundColor: c.accentSoft }]}>
+                  <Leaf color={c.accentBright} size={14} strokeWidth={2.2} />
+                  <Text style={[styles.impactScorePillText, { color: c.accentBright }]}>IMPACT SCORE</Text>
+                </View>
+
+                <Text style={styles.heroScoreLarge}>{impactScore}</Text>
+
+                <Text style={styles.impactScoreMeta}>Based on returns & environmental impact</Text>
+
+                <View style={styles.headerBadges}>
+                  <StreakBadge count={displayUser?.streakCount || 0} />
+                  <View style={styles.pointsBadge}>
+                    <Star color="#FBBF24" size={13} fill="#FBBF24" />
+                    <Text style={styles.pointsText}>{points} pts</Text>
+                  </View>
+                </View>
               </View>
-              <Text style={[styles.wellLabel, { color: c.text }]}>Borrow</Text>
+            </LinearGradient>
+          </View>
+        </LinearGradient>
+
+        {/* Content */}
+        <View style={{ backgroundColor: c.bg, flex: 1, paddingBottom: 24 }}>
+          {/* Overscroll bottom background extender */}
+          <View
+            style={{
+              position: 'absolute',
+              bottom: -1500,
+              left: 0,
+              right: 0,
+              height: 1500,
+              backgroundColor: c.bg,
+            }}
+          />
+          {/* Quick Actions */}
+          <View style={[styles.quickActionsRow, { paddingHorizontal: PADDING, marginTop: 20 }]}>
+            <TouchableOpacity
+              style={[styles.actionCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}
+              onPress={goToScanner}
+              accessibilityLabel="Borrow a container"
+              accessibilityRole="button"
+            >
+              <View style={styles.actionIconPlaceholder}>
+                <PlusCircle color={c.accent} size={40} strokeWidth={1.5} />
+              </View>
+              <Text style={[styles.actionLabel, { color: c.text }]}>BORROW</Text>
+              <Text style={[styles.actionMeta, { color: c.textMuted }]}>
+                <Text style={[styles.actionMetaValue, { color: c.textSecondary }]}>
+                  {displayUser?.activeBorrows || 0}
+                </Text>
+                {' active holds'}
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.wellAction} onPress={goToScanner} accessibilityLabel="Return a container" accessibilityRole="button" activeOpacity={0.82}>
-              <View style={[styles.actionWell, { backgroundColor: returnWell.bg }]}>
-                <Recycle color={returnWell.icon} size={26} strokeWidth={2} />
+
+            <TouchableOpacity
+              style={[styles.actionCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}
+              onPress={goToScanner}
+              accessibilityLabel="Return a container"
+              accessibilityRole="button"
+            >
+              <View style={styles.actionIconPlaceholder}>
+                <Recycle color={c.accent} size={40} strokeWidth={1.5} />
               </View>
-              <Text style={[styles.wellLabel, { color: c.text }]}>Return</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.wellAction} onPress={goToMap} accessibilityLabel="Open map" accessibilityRole="button" activeOpacity={0.82}>
-              <View style={[styles.actionWell, { backgroundColor: mapWell.bg }]}>
-                <MapPin color={mapWell.icon} size={26} strokeWidth={2} />
-              </View>
-              <Text style={[styles.wellLabel, { color: c.text }]}>Map</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.wellAction} onPress={goToInventory} accessibilityLabel="View activity" accessibilityRole="button" activeOpacity={0.82}>
-              <View style={[styles.actionWell, { backgroundColor: activityWell.bg }]}>
-                <ClipboardList color={activityWell.icon} size={26} strokeWidth={2} />
-              </View>
-              <Text style={[styles.wellLabel, { color: c.text }]}>Activity</Text>
+              <Text style={[styles.actionLabel, { color: c.text }]}>RETURN</Text>
+              <Text style={[styles.actionMeta, { color: c.textMuted }]}>
+                <Text style={[styles.actionMetaValue, { color: c.textSecondary }]}>
+                  {displayUser?.impact?.totalReturns || 0}
+                </Text>
+                {' total returns'}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -445,13 +457,15 @@ export default function Dashboard() {
               </Text>
             </View>
             <View style={[styles.goalTrack, { backgroundColor: c.surfaceBorder + '33' }]}>
-              <View
+              <LinearGradient
+                colors={[c.accent, '#A3E635']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
                 style={{
                   position: 'absolute',
                   top: 0, bottom: 0,
                   width: `${weeklyGoalPercent}%` as any,
                   borderRadius: 4,
-                  backgroundColor: c.accent,
                 }}
               />
             </View>
@@ -495,22 +509,22 @@ export default function Dashboard() {
             </View>
             <View style={styles.envGrid}>
               <View style={[styles.envCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-                <View style={[styles.envIconBox, { backgroundColor: borrowWell.bg }]}>
-                  <Droplets color={borrowWell.icon} size={20} strokeWidth={1.8} />
+                <View style={[styles.envIconBox, { backgroundColor: c.accentSoft }]}>
+                  <Droplets color={c.accent} size={20} strokeWidth={1.8} />
                 </View>
                 <Text style={[styles.envValue, { color: c.text }]}>{envEquivalents.water}L</Text>
                 <Text style={[styles.envLabel, { color: c.textFaint }]}>Water saved</Text>
               </View>
               <View style={[styles.envCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-                <View style={[styles.envIconBox, { backgroundColor: activityWell.bg }]}>
-                  <Car color={activityWell.icon} size={20} strokeWidth={1.8} />
+                <View style={[styles.envIconBox, { backgroundColor: '#3B82F6' + '12' }]}>
+                  <Car color="#3B82F6" size={20} strokeWidth={1.8} />
                 </View>
                 <Text style={[styles.envValue, { color: c.text }]}>{envEquivalents.driving}km</Text>
                 <Text style={[styles.envLabel, { color: c.textFaint }]}>Driving offset</Text>
               </View>
               <View style={[styles.envCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-                <View style={[styles.envIconBox, { backgroundColor: mapWell.bg }]}>
-                  <TreePine color={mapWell.icon} size={20} strokeWidth={1.8} />
+                <View style={[styles.envIconBox, { backgroundColor: '#F59E0B' + '12' }]}>
+                  <TreePine color="#F59E0B" size={20} strokeWidth={1.8} />
                 </View>
                 <Text style={[styles.envValue, { color: c.text }]}>{envEquivalents.bottles}</Text>
                 <Text style={[styles.envLabel, { color: c.textFaint }]}>Bottles saved</Text>
@@ -555,7 +569,7 @@ export default function Dashboard() {
             >
               <View style={styles.guideWrapper}>
                 <View style={[styles.guideIconMain, { backgroundColor: c.accent }]}>
-                  <HelpCircle color={c.onAccent} size={24} />
+                  <HelpCircle color="#fff" size={24} />
                 </View>
                 <View style={styles.guideTextInfo}>
                   <Text style={[styles.guideTitle, { color: c.text }]}>New to Returning?</Text>
@@ -610,8 +624,8 @@ export default function Dashboard() {
                     <React.Fragment key={item._id}>
                       {idx > 0 && <View style={[styles.miniDivider, { backgroundColor: c.surfaceBorder }]} />}
                       <View style={styles.miniItem}>
-                        <View style={[styles.miniIcon, { backgroundColor: isReturn ? homeWell(mode, 'withdraw').bg : homeWell(mode, 'activity').bg }]}>
-                          {isReturn ? <ArrowDownLeft color={homeWell(mode, 'withdraw').icon} size={16} /> : <ArrowUpRight color={homeWell(mode, 'activity').icon} size={16} />}
+                        <View style={[styles.miniIcon, { backgroundColor: isReturn ? c.accentSoft : '#3B82F615' }]}>
+                          {isReturn ? <ArrowDownLeft color={c.accent} size={16} /> : <ArrowUpRight color="#3B82F6" size={16} />}
                         </View>
                         <View style={{ flex: 1, marginLeft: 12 }}>
                           <Text style={[styles.miniTitle, { color: c.text }]}>
@@ -634,44 +648,14 @@ export default function Dashboard() {
               )}
             </View>
           </View>
-
-          {/* AI Coach */}
-          <View style={styles.coachContainer}>
-            <View style={styles.sectionHeader}>
-              <Text style={[screenHeader.sectionTitle, { color: c.text }]}>AI Coach</Text>
-            </View>
-
-            {coachTips.length > 0 ? (
-              coachTips.map((tip, idx) => (
-                <View
-                  key={idx}
-                  style={[styles.coachCard, { borderColor: c.surfaceBorder }]}
-                >
-                  <View style={styles.coachContent}>
-                    <Text style={[styles.coachTitle, { color: c.text }]}>{tip.title}</Text>
-                    <Text style={[styles.coachMessage, { color: c.textSecondary }]}>{tip.message}</Text>
-                  </View>
-                </View>
-              ))
-            ) : (
-              <View style={[styles.coachCard, { borderColor: c.surfaceBorder, borderStyle: 'dashed' }]}>
-                <Text style={[styles.coachMessage, { color: c.textFaint }]}>
-                  Tips will appear based on your activity.
-                </Text>
-              </View>
-            )}
-          </View>
-
-          <View style={{ height: 120 }} />
         </View>
       </ScrollView>
-      </Animated.View>
 
       {/* Sync Status */}
       {queueCount > 0 && (
         <View style={[styles.syncBar, { backgroundColor: c.accent }]}>
-          <ButtonLoader color={c.onAccent} />
-          <Text style={[styles.syncBarText, { marginLeft: 10, color: c.onAccent }]}>Syncing {queueCount} events...</Text>
+          <ButtonLoader color="#fff" />
+          <Text style={[styles.syncBarText, { marginLeft: 10 }]}>Syncing {queueCount} events...</Text>
         </View>
       )}
 
@@ -688,8 +672,10 @@ export default function Dashboard() {
         visible={profileDrawerVisible}
         onClose={closeProfileDrawer}
         impactScore={impactScore}
+        points={points}
         streakCount={displayUser?.streakCount ?? 0}
         totalReturns={displayUser?.impact?.totalReturns ?? 0}
+        plasticSaved={parseFloat(plasticSaved) || 0}
       />
     </View>
   );
@@ -700,28 +686,64 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: 0 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerLead: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, marginRight: 8 },
-  headerLeadPressed: { opacity: 0.82 },
-  headerTextBlock: { flex: 1, minWidth: 0 },
-  greeting: { fontSize: 18, fontWeight: '700', letterSpacing: -0.35 },
-  headerMeta: { fontSize: 11, marginTop: 2 },
-  headerActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  headerIconBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  headerTextBlock: { flex: 1, marginRight: 12 },
+  date: { fontSize: 11, fontWeight: '600', letterSpacing: 1.4, marginBottom: 4, color: 'rgba(255,255,255,0.45)' },
+  greeting: { fontSize: 24, fontWeight: '700', letterSpacing: -0.5, color: '#fff' },
+  headerActions: { flexDirection: 'row', gap: 10, alignItems: 'center' },
+  headerActionBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
-    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: { shadowOpacity: 0, shadowRadius: 0 },
+      android: { elevation: 0 },
+    }),
+  },
+  avatarBtn: {
+    borderWidth: 2,
+    padding: 0,
   },
   badge: {
-    position: 'absolute', top: 6, right: 6,
-    minWidth: 16, height: 16, borderRadius: 8,
+    position: 'absolute', top: 2, right: 2,
+    minWidth: 18, height: 18, borderRadius: 9,
     justifyContent: 'center', alignItems: 'center',
-    paddingHorizontal: 3, borderWidth: 2,
+    paddingHorizontal: 4, borderWidth: 2,
   },
-  badgeText: { fontSize: 9, fontWeight: '700' },
+  badgeText: { color: '#fff', fontSize: 9, fontWeight: '900' },
+  headerAvatar: { width: '100%', height: '100%', borderRadius: 21 },
+
+  mainCardContainer: { marginTop: 4 },
+  heroCard: {
+    borderRadius: 20, paddingVertical: 36, paddingHorizontal: 24,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  heroContent: { alignItems: 'center' },
+  heroScoreLarge: {
+    fontSize: 64, fontWeight: '900', letterSpacing: -2, lineHeight: 72,
+    color: '#fff', marginTop: 12,
+  },
+  impactScorePill: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingVertical: 5, paddingHorizontal: 14, borderRadius: 999,
+  },
+  impactScorePillText: { fontSize: 10, fontWeight: '700', letterSpacing: 1.2 },
+  impactScoreMeta: {
+    marginTop: 8, fontSize: 13, fontWeight: '500',
+    color: 'rgba(255,255,255,0.5)', textAlign: 'center', lineHeight: 18,
+  },
+  headerBadges: { flexDirection: 'row', gap: 8, alignItems: 'center', marginTop: 20 },
+  pointsBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+  },
+  pointsText: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.9)' },
 
   statsGrid: { flexDirection: 'row', gap: 12, marginTop: 16, paddingHorizontal: PADDING, alignItems: 'stretch' },
   gridItem: {
@@ -733,17 +755,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 148,
   },
-  statIconContainer: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+  statIconContainer: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
   statValue: { fontSize: 22, fontWeight: '900', marginBottom: 6, lineHeight: 28, width: '100%', textAlign: 'center' },
   statLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 0.8, textAlign: 'center', minHeight: 28, width: '100%' },
 
-  quickActionsRow: { flexDirection: 'row', marginTop: 20 },
-  wellAction: { flex: 1, alignItems: 'center', gap: 10 },
-  actionWell: {
-    width: 58, height: 58, borderRadius: 29,
+  quickActionsRow: { flexDirection: 'row', gap: 12, marginTop: 20 },
+  actionCard: {
+    flex: 1, padding: 24, borderRadius: RADIUS, borderWidth: 1,
     alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
   },
-  wellLabel: { fontSize: 13, fontWeight: '600' },
+  actionIconPlaceholder: { marginBottom: 12 },
+  actionLabel: { fontSize: 14, fontWeight: '800', letterSpacing: 1 },
 
   sectionMargin: { marginTop: 32, paddingHorizontal: PADDING },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
@@ -761,12 +785,6 @@ const styles = StyleSheet.create({
   narrativeContent: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   narrativeText: { flex: 1, fontSize: 14, lineHeight: 22, fontWeight: '600' },
 
-  coachContainer: { marginTop: 32, paddingHorizontal: PADDING },
-  coachCard: { padding: 20, borderRadius: RADIUS, borderWidth: 1, marginBottom: 12 },
-  coachContent: { flex: 1 },
-  coachTitle: { fontSize: 16, fontWeight: '800', marginBottom: 6 },
-  coachMessage: { fontSize: 14, lineHeight: 20, opacity: 0.8 },
-
   syncBar: {
     position: 'absolute', bottom: 30, left: PADDING, right: PADDING,
     height: 52, borderRadius: RADIUS,
@@ -774,11 +792,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 5,
   },
-  syncBarText: { fontWeight: '700', fontSize: 14 },
+  syncBarText: { color: '#fff', fontWeight: '700', fontSize: 14 },
 
   guideCard: { padding: 18, borderRadius: RADIUS, borderWidth: 1 },
   guideWrapper: { flexDirection: 'row', alignItems: 'center' },
-  guideIconMain: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center' },
+  guideIconMain: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
   guideTextInfo: { flex: 1, marginLeft: 14 },
   guideTitle: { fontSize: 16, fontWeight: '800', marginBottom: 2 },
   guideDesc: { fontSize: 13, fontWeight: '600', lineHeight: 18 },
@@ -789,7 +807,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
   },
   communityContent: { flexDirection: 'row', alignItems: 'center', padding: 18 },
-  communityIcon: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center' },
+  communityIcon: { width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center' },
   communityTitle: { fontSize: 16, fontWeight: '800', marginBottom: 4 },
   communitySubtitle: { fontSize: 13, fontWeight: '600' },
 
@@ -813,18 +831,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
   },
   milestoneTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
-  milestoneIconBox: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center' },
+  milestoneIconBox: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
   milestoneName: { fontSize: 16, fontWeight: '800' },
   milestonePercent: { fontSize: 13, fontWeight: '600', marginTop: 2 },
   milestoneTrack: { height: 6, borderRadius: 3, width: '100%', overflow: 'hidden' },
 
   envGrid: { flexDirection: 'row', gap: 10 },
   envCard: {
-    flex: 1, borderRadius: RADIUS, borderWidth: 1, paddingVertical: 16, paddingHorizontal: 8, alignItems: 'center',
+    flex: 1, borderRadius: RADIUS, borderWidth: 1, padding: 16, alignItems: 'center',
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.03, shadowRadius: 6, elevation: 1,
   },
-  envIconBox: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
+  envIconBox: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
   envValue: { fontSize: 20, fontWeight: '900', letterSpacing: -0.5 },
   envLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.3, marginTop: 2 },
 });

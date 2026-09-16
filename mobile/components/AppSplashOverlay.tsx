@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 9999,
-    backgroundColor: '#000000',
+    backgroundColor: '#0B1120',
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 9999,
@@ -190,6 +190,6 @@ const styles = StyleSheet.create({
   },
   dotOn: {
     width: 16,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#10B981',
   },
 });

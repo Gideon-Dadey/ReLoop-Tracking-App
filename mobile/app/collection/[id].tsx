@@ -137,29 +137,24 @@ export default function CollectionBaseScreen() {
         </View>
 
         {sameGroup.length > 0 ? (
-          <>
-            <Text style={[styles.groupLabel, { color: c.textFaint }]}>
-              SAME GROUP · {base.group?.toUpperCase()}
-            </Text>
-            <CardSurface>
-              {sameGroup.map((item, index) => (
-                <MenuRow
-                  key={item._id}
-                  icon={MapPin}
-                  title={item.name}
-                  subtitle={[
-                    item.distanceKm != null ? formatDistanceKm(item.distanceKm) : null,
-                    item.location?.address,
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')}
-                  well="sky"
-                  onPress={() => router.push(`/collection/${item._id}` as any)}
-                  showDivider={index < sameGroup.length - 1}
-                />
-              ))}
-            </CardSurface>
-          </>
+          <CardSurface style={{ marginTop: 16 }}>
+            {sameGroup.map((item, index) => (
+              <MenuRow
+                key={item._id}
+                icon={MapPin}
+                title={item.name}
+                subtitle={[
+                  item.distanceKm != null ? formatDistanceKm(item.distanceKm) : null,
+                  item.location?.address,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+                well="sky"
+                onPress={() => router.push(`/collection/${item._id}` as any)}
+                showDivider={index < sameGroup.length - 1}
+              />
+            ))}
+          </CardSurface>
         ) : null}
       </ScrollView>
     </View>

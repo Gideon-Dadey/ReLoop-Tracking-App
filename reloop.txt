@@ -1,0 +1,10 @@
+cd mobile && npx expo start --clear
+
+cd backend && npm run start:dev
+
+
+susuflow
+
+pnpm dev:mobile
+
+ pnpm --filter @susuflow/mobile start

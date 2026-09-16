@@ -87,8 +87,7 @@ export default function CollectionListScreen() {
           </View>
         ) : (
           <>
-            <Text style={[styles.groupLabel, { color: c.textFaint }]}>NEAREST</Text>
-            <CardSurface>
+            <CardSurface style={{ marginTop: 16 }}>
               {nearest.map((base, index) => (
                 <MenuRow
                   key={base._id}
@@ -109,29 +108,24 @@ export default function CollectionListScreen() {
             </CardSurface>
 
             {sameGroup.length > 0 ? (
-              <>
-                <Text style={[styles.groupLabel, { color: c.textFaint }]}>
-                  SAME GROUP · {selectedBase?.group?.toUpperCase()}
-                </Text>
-                <CardSurface>
-                  {sameGroup.map((base, index) => (
-                    <MenuRow
-                      key={base._id}
-                      icon={MapPin}
-                      title={base.name}
-                      subtitle={[
-                        base.distanceKm != null ? formatDistanceKm(base.distanceKm) : null,
-                        base.location?.address,
-                      ]
-                        .filter(Boolean)
-                        .join(' · ')}
-                      well="sky"
-                      onPress={() => openBase(base)}
-                      showDivider={index < sameGroup.length - 1}
-                    />
-                  ))}
-                </CardSurface>
-              </>
+              <CardSurface style={{ marginTop: 16 }}>
+                {sameGroup.map((base, index) => (
+                  <MenuRow
+                    key={base._id}
+                    icon={MapPin}
+                    title={base.name}
+                    subtitle={[
+                      base.distanceKm != null ? formatDistanceKm(base.distanceKm) : null,
+                      base.location?.address,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                    well="sky"
+                    onPress={() => openBase(base)}
+                    showDivider={index < sameGroup.length - 1}
+                  />
+                ))}
+              </CardSurface>
             ) : null}
           </>
         )}

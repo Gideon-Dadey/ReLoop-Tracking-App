@@ -73,8 +73,7 @@ export default function ResearchScreen() {
       >
         <ResearchHubOverview />
 
-        <Text style={[styles.groupLabel, { color: c.textFaint }]}>CONTRIBUTE</Text>
-        <CardSurface style={styles.groupCard}>
+        <CardSurface style={[styles.groupCard, { marginTop: 16 }]}>
           <MenuRow
             icon={ClipboardList}
             title="Evaluate Campaigns"
@@ -106,8 +105,7 @@ export default function ResearchScreen() {
           />
         </CardSurface>
 
-        <Text style={[styles.groupLabel, { color: c.textFaint }]}>INSIGHTS & SHARE</Text>
-        <CardSurface style={styles.groupCard}>
+        <CardSurface style={[styles.groupCard, { marginTop: 16 }]}>
           <MenuRow
             icon={BarChart3}
             title="Campaign Dashboard"

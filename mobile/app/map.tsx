@@ -1,5 +1,5 @@
-import { Redirect } from 'expo-router';
+import NearbyMapScreen from '@/components/NearbyMapScreen';
 
-export default function MapRedirect() {
-  return <Redirect href="/(tabs)/map" />;
+export default function MapScreen() {
+  return <NearbyMapScreen showBackButton />;
 }

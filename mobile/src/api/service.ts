@@ -76,11 +76,6 @@ export interface Reward {
   description?: string;
 }
 
-export interface CoachTip {
-  title: string;
-  message: string;
-}
-
 export interface CommunityStats {
   totalPlasticSaved: number;
   totalUsers: number;
@@ -361,15 +356,6 @@ export const apiService = {
       return data;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Failed to redeem reward');
-    }
-  },
-
-  getCoachRecommendations: async (): Promise<CoachTip[]> => {
-    try {
-      const { data } = await apiClient.get('/ai/recommendations');
-      return data;
-    } catch {
-      return [];
     }
   },
 

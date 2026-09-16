@@ -51,7 +51,6 @@ export async function syncAfterContainerReturn(
     }),
     queryClient.refetchQueries({ queryKey: queryKeys.transactionHistory(userId) }),
     queryClient.refetchQueries({ queryKey: queryKeys.activeBorrows(userId) }),
-    queryClient.refetchQueries({ queryKey: queryKeys.coachRecommendations(userId) }),
   ]);
 
   const fresh = queryClient.getQueryData<User>(statsKey);

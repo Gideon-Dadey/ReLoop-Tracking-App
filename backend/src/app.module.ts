@@ -6,7 +6,6 @@ import { OrganizationsModule } from './modules/organizations/organizations.modul
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ContainersModule } from './modules/containers/containers.module';
-import { AICoachModule } from './modules/ai/ai.module';
 import { BlockchainModule } from './modules/blockchain/blockchain.module';
 import { SyncModule } from './modules/sync/sync.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -14,7 +13,6 @@ import { CommunityModule } from './modules/community/community.module';
 import { CampaignsModule } from './modules/campaigns/campaigns.module';
 import { SurveysModule } from './modules/surveys/surveys.module';
 import { ReferralModule } from './modules/referral/referral.module';
-
 
 @Module({
   imports: [
@@ -34,7 +32,6 @@ import { ReferralModule } from './modules/referral/referral.module';
     UsersModule,
     AuthModule,
     ContainersModule,
-    AICoachModule,
     BlockchainModule,
     SyncModule,
     NotificationsModule,

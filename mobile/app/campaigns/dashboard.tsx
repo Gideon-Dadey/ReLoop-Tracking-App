@@ -47,7 +47,7 @@ export default function CampaignDashboard() {
   }
 
   const barData = [
-    { value: stats.averageScores.visualDesignQuality, label: 'Visual', frontColor: '#334155' },
+    { value: stats.averageScores.visualDesignQuality, label: 'Visual', frontColor: '#10B981' },
     { value: stats.averageScores.narrativeCoherence, label: 'Narrative', frontColor: '#3B82F6' },
     { value: stats.averageScores.circularEconomyAlignment, label: 'Circular', frontColor: '#8B5CF6' },
     { value: stats.averageScores.behavioralCallToAction, label: 'Action', frontColor: '#F59E0B' },
@@ -63,121 +63,120 @@ export default function CampaignDashboard() {
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>
       <PinnedScreenHeader showBack title="Campaign Dashboard" />
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} tintColor={c.accent} />}
-    >
-
-      {/* Stats Cards */}
-      <View style={styles.statsRow}>
-        <View style={[styles.statCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-          <TrendingUp size={20} color={c.accent} />
-          <Text style={[styles.statValue, { color: c.text }]}>{stats.totalCampaigns}</Text>
-          <Text style={[styles.statLabel, { color: c.textSecondary }]}>Total</Text>
-        </View>
-        <View style={[styles.statCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-          <Award size={20} color="#F59E0B" />
-          <Text style={[styles.statValue, { color: c.text }]}>{stats.evaluatedCampaigns}</Text>
-          <Text style={[styles.statLabel, { color: c.textSecondary }]}>Evaluated</Text>
-        </View>
-        <View style={[styles.statCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-          <Globe size={20} color="#3B82F6" />
-          <Text style={[styles.statValue, { color: c.text }]}>{stats.sdg12AlignmentPercent}%</Text>
-          <Text style={[styles.statLabel, { color: c.textSecondary }]}>SDG 12</Text>
-        </View>
-      </View>
-
-      {/* Score Distribution */}
-      <View style={[styles.chartSection, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-        <Text style={[styles.sectionTitle, { color: c.text }]}>Average Scores by Criteria</Text>
-        <BarChart
-          data={barData}
-          barWidth={barWidth}
-          spacing={barSpacing}
-          maxValue={5}
-          noOfSections={5}
-          yAxisTextStyle={{ color: c.textMuted, fontSize: 11 }}
-          xAxisLabelTextStyle={{ color: c.textMuted, fontSize: isSmall ? 7 : 9 }}
-          rulesColor={c.surfaceBorder}
-          yAxisColor="transparent"
-          xAxisColor="transparent"
-          barBorderRadius={6}
-          width={chartWidth}
-          height={isSmall ? 150 : 180}
-          isAnimated
-        />
-      </View>
-
-      {/* Platform Distribution */}
-      {pieData.length > 0 && (
-        <View style={[styles.chartSection, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-          <Text style={[styles.sectionTitle, { color: c.text }]}>Platform Distribution</Text>
-          <View style={styles.pieContainer}>
-            <PieChart
-              data={pieData}
-              radius={isSmall ? 60 : 70}
-              donut
-              innerRadius={isSmall ? 38 : 45}
-              centerLabelComponent={() => (
-                <View style={styles.pieCenter}>
-                  <Text style={[styles.pieCenterValue, { color: '#000000' }]}>{stats.totalCampaigns}</Text>
-                  <Text style={[styles.pieCenterLabel, { color: '#374151' }]}>Total</Text>
-                </View>
-              )}
-            />
-            <View style={styles.legendContainer}>
-              {stats.platformDistribution.map((p) => (
-                <View key={p.platform} style={styles.legendItem}>
-                  <PlatformIcon platform={p.platform} size={16} />
-                  <Text style={[styles.legendText, { color: c.textSecondary }]}>
-                    {PLATFORM_META[p.platform].label}
-                  </Text>
-                  <Text style={[styles.legendCount, { color: c.text }]}>{p.count}</Text>
-                </View>
-              ))}
-            </View>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} tintColor={c.accent} />}
+      >
+        {/* Stats Cards */}
+        <View style={styles.statsRow}>
+          <View style={[styles.statCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
+            <TrendingUp size={20} color={c.accent} />
+            <Text style={[styles.statValue, { color: c.text }]}>{stats.totalCampaigns}</Text>
+            <Text style={[styles.statLabel, { color: c.textSecondary }]}>Total</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
+            <Award size={20} color="#F59E0B" />
+            <Text style={[styles.statValue, { color: c.text }]}>{stats.evaluatedCampaigns}</Text>
+            <Text style={[styles.statLabel, { color: c.textSecondary }]}>Evaluated</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
+            <Globe size={20} color="#3B82F6" />
+            <Text style={[styles.statValue, { color: c.text }]}>{stats.sdg12AlignmentPercent}%</Text>
+            <Text style={[styles.statLabel, { color: c.textSecondary }]}>SDG 12</Text>
           </View>
         </View>
-      )}
 
-      {/* Top Campaigns */}
-      {stats.topCampaigns.length > 0 && (
+        {/* Score Distribution */}
         <View style={[styles.chartSection, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-          <Text style={[styles.sectionTitle, { color: c.text }]}>Top Campaigns</Text>
-          {stats.topCampaigns.map((cp, i) => (
-            <View key={cp._id} style={[styles.topItem, i < stats.topCampaigns.length - 1 && { borderBottomWidth: 1, borderBottomColor: c.surfaceBorder }]}>
-              <View style={[styles.rankBadge, { backgroundColor: i === 0 ? '#F59E0B22' : c.inputBg }]}>
-                <Text style={[styles.rankText, { color: i === 0 ? '#F59E0B' : c.textMuted }]}>#{i + 1}</Text>
-              </View>
-              <View style={styles.topContent}>
-                <Text style={[styles.topTitle, { color: c.text }]} numberOfLines={1}>{cp.title}</Text>
-                <View style={styles.topPlatformRow}>
-                  <PlatformIcon platform={cp.platform as CampaignPlatform} size={12} />
-                  <Text style={[styles.topPlatform, { color: c.textMuted }]}>
-                    {PLATFORM_META[cp.platform as CampaignPlatform]?.label ?? cp.platform}
-                  </Text>
-                </View>
-              </View>
-              <Text style={[styles.topScore, { color: c.accent }]}>{cp.scores.overallScore.toFixed(1)}</Text>
-            </View>
-          ))}
+          <Text style={[styles.sectionTitle, { color: c.text }]}>Average Scores by Criteria</Text>
+          <BarChart
+            data={barData}
+            barWidth={barWidth}
+            spacing={barSpacing}
+            maxValue={5}
+            noOfSections={5}
+            yAxisTextStyle={{ color: c.textMuted, fontSize: 11 }}
+            xAxisLabelTextStyle={{ color: c.textMuted, fontSize: isSmall ? 7 : 9 }}
+            rulesColor={c.surfaceBorder}
+            yAxisColor="transparent"
+            xAxisColor="transparent"
+            barBorderRadius={6}
+            width={chartWidth}
+            height={isSmall ? 150 : 180}
+            isAnimated
+          />
         </View>
-      )}
 
-      {/* SDG 12 Alignment */}
-      <View style={[styles.chartSection, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
-        <Text style={[styles.sectionTitle, { color: c.text }]}>SDG 12 Alignment</Text>
-        <View style={styles.alignmentContainer}>
-          <View style={[styles.alignmentBg, { backgroundColor: c.inputBg }]}>
-            <View style={[styles.alignmentFill, { width: `${stats.sdg12AlignmentPercent}%`, backgroundColor: c.accent }]} />
+        {/* Platform Distribution */}
+        {pieData.length > 0 && (
+          <View style={[styles.chartSection, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
+            <Text style={[styles.sectionTitle, { color: c.text }]}>Platform Distribution</Text>
+            <View style={styles.pieContainer}>
+              <PieChart
+                data={pieData}
+                radius={isSmall ? 60 : 70}
+                donut
+                innerRadius={isSmall ? 38 : 45}
+                centerLabelComponent={() => (
+                  <View style={styles.pieCenter}>
+                    <Text style={[styles.pieCenterValue, { color: '#ffffff' }]}>{stats.totalCampaigns}</Text>
+                    <Text style={[styles.pieCenterLabel, { color: '#9CA3AF' }]}>Total</Text>
+                  </View>
+                )}
+              />
+              <View style={styles.legendContainer}>
+                {stats.platformDistribution.map((p) => (
+                  <View key={p.platform} style={styles.legendItem}>
+                    <PlatformIcon platform={p.platform} size={16} />
+                    <Text style={[styles.legendText, { color: c.textSecondary }]}>
+                      {PLATFORM_META[p.platform].label}
+                    </Text>
+                    <Text style={[styles.legendCount, { color: c.text }]}>{p.count}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
           </View>
-          <Text style={[styles.alignmentText, { color: c.text }]}>
-            {stats.sdg12AlignmentPercent}% alignment with responsible consumption & production goals
-          </Text>
+        )}
+
+        {/* Top Campaigns */}
+        {stats.topCampaigns.length > 0 && (
+          <View style={[styles.chartSection, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
+            <Text style={[styles.sectionTitle, { color: c.text }]}>Top Campaigns</Text>
+            {stats.topCampaigns.map((cp, i) => (
+              <View key={cp._id} style={[styles.topItem, i < stats.topCampaigns.length - 1 && { borderBottomWidth: 1, borderBottomColor: c.surfaceBorder }]}>
+                <View style={[styles.rankBadge, { backgroundColor: i === 0 ? '#F59E0B22' : c.inputBg }]}>
+                  <Text style={[styles.rankText, { color: i === 0 ? '#F59E0B' : c.textMuted }]}>#{i + 1}</Text>
+                </View>
+                <View style={styles.topContent}>
+                  <Text style={[styles.topTitle, { color: c.text }]} numberOfLines={1}>{cp.title}</Text>
+                  <View style={styles.topPlatformRow}>
+                    <PlatformIcon platform={cp.platform as CampaignPlatform} size={12} />
+                    <Text style={[styles.topPlatform, { color: c.textMuted }]}>
+                      {PLATFORM_META[cp.platform as CampaignPlatform]?.label ?? cp.platform}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={[styles.topScore, { color: c.accent }]}>{cp.scores.overallScore.toFixed(1)}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* SDG 12 Alignment */}
+        <View style={[styles.chartSection, { backgroundColor: c.surface, borderColor: c.surfaceBorder }]}>
+          <Text style={[styles.sectionTitle, { color: c.text }]}>SDG 12 Alignment</Text>
+          <View style={styles.alignmentContainer}>
+            <View style={[styles.alignmentBg, { backgroundColor: c.inputBg }]}>
+              <View style={[styles.alignmentFill, { width: `${stats.sdg12AlignmentPercent}%`, backgroundColor: c.accent }]} />
+            </View>
+            <Text style={[styles.alignmentText, { color: c.text }]}>
+              {stats.sdg12AlignmentPercent}% alignment with responsible consumption & production goals
+            </Text>
+          </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
     </View>
   );
 }

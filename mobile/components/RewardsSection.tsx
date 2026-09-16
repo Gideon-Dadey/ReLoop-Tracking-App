@@ -83,8 +83,6 @@ export default function RewardsSection() {
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.groupLabel, { color: c.textFaint }]}>ECO REWARDS</Text>
-      
       <View style={styles.rewardsList}>
         {isFetching && (
           <View style={{ gap: 10, marginVertical: 10 }}>
